@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { Heart, Shield, Clock, Users, Star, CheckCircle } from "lucide-react"
 
 export default function Home() {
   return (
@@ -13,29 +12,37 @@ export default function Home() {
       <Header />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary to-primary/90 text-primary-foreground py-20">
+      <section
+        style={{ background: "linear-gradient(to bottom right, #15803d, #16a34a)", color: "white", padding: "5rem 0" }}
+      >
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-4xl mx-auto">
-            <Badge variant="secondary" className="mb-6 text-sm font-medium">
+            <Badge
+              variant="secondary"
+              className="mb-6 text-sm font-medium"
+              style={{ backgroundColor: "white", color: "#15803d" }}
+            >
               Conectando Cuidado e Confiança
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-balance">Conectamos Você ao Cuidado que Precisa</h1>
-            <p className="text-xl md:text-2xl mb-8 text-primary-foreground/90 text-pretty">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-balance" style={{ color: "white" }}>
+              Conectamos Você ao Cuidado que Precisa
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 text-pretty" style={{ color: "rgba(255, 255, 255, 0.9)" }}>
               Plataforma profissional que conecta enfermeiros qualificados a pacientes, oferecendo cuidados de saúde
               personalizados e confiáveis no conforto do seu lar.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
-                <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
-                  <Heart className="mr-2 h-5 w-5" />
-                  Encontrar um Enfermeiro
+                <Button size="lg" className="text-lg px-8 py-3" style={{ backgroundColor: "white", color: "#15803d" }}>
+                  ❤️ Encontrar um Enfermeiro
                 </Button>
               </Link>
               <Link href="/register">
                 <Button
                   size="lg"
                   variant="outline"
-                  className="text-lg px-8 py-3 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
+                  className="text-lg px-8 py-3 bg-transparent"
+                  style={{ borderColor: "rgba(255, 255, 255, 0.2)", color: "white", backgroundColor: "transparent" }}
                 >
                   Sou Enfermeiro
                 </Button>
@@ -46,11 +53,13 @@ export default function Home() {
       </section>
 
       {/* Services Section */}
-      <section className="py-20 bg-secondary/30">
+      <section className="py-20" style={{ backgroundColor: "#f0fdf4" }}>
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance">Nossos Serviços</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance" style={{ color: "#1f2937" }}>
+              Nossos Serviços
+            </h2>
+            <p className="text-xl max-w-2xl mx-auto text-pretty" style={{ color: "#6b7280" }}>
               Oferecemos uma gama completa de serviços de enfermagem domiciliar com profissionais qualificados e
               experientes.
             </p>
@@ -59,8 +68,11 @@ export default function Home() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="text-center hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                  <Heart className="h-8 w-8 text-primary" />
+                <div
+                  className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: "#dcfce7" }}
+                >
+                  <span className="text-2xl">❤️</span>
                 </div>
                 <CardTitle>Cuidados Domiciliares</CardTitle>
               </CardHeader>
@@ -74,8 +86,11 @@ export default function Home() {
 
             <Card className="text-center hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                  <Shield className="h-8 w-8 text-primary" />
+                <div
+                  className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: "#dcfce7" }}
+                >
+                  <span className="text-2xl">🛡️</span>
                 </div>
                 <CardTitle>Cuidados Pós-Operatórios</CardTitle>
               </CardHeader>
@@ -89,8 +104,11 @@ export default function Home() {
 
             <Card className="text-center hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                  <Clock className="h-8 w-8 text-primary" />
+                <div
+                  className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: "#dcfce7" }}
+                >
+                  <span className="text-2xl">⏰</span>
                 </div>
                 <CardTitle>Atendimento 24h</CardTitle>
               </CardHeader>
@@ -104,8 +122,11 @@ export default function Home() {
 
             <Card className="text-center hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                  <Users className="h-8 w-8 text-primary" />
+                <div
+                  className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: "#dcfce7" }}
+                >
+                  <span className="text-2xl">👥</span>
                 </div>
                 <CardTitle>Cuidados Geriátricos</CardTitle>
               </CardHeader>
@@ -119,8 +140,11 @@ export default function Home() {
 
             <Card className="text-center hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle className="h-8 w-8 text-primary" />
+                <div
+                  className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: "#dcfce7" }}
+                >
+                  <span className="text-2xl">✅</span>
                 </div>
                 <CardTitle>Consultas Especializadas</CardTitle>
               </CardHeader>
@@ -134,8 +158,11 @@ export default function Home() {
 
             <Card className="text-center hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                  <Heart className="h-8 w-8 text-primary" />
+                <div
+                  className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: "#dcfce7" }}
+                >
+                  <span className="text-2xl">💚</span>
                 </div>
                 <CardTitle>Cuidados Paliativos</CardTitle>
               </CardHeader>
@@ -155,15 +182,20 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-balance">Por que Escolher o MedAssist?</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-balance" style={{ color: "#1f2937" }}>
+                Por que Escolher o MedAssist?
+              </h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle className="h-5 w-5 text-primary" />
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
+                    style={{ backgroundColor: "#dcfce7" }}
+                  >
+                    <span>✅</span>
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Profissionais Qualificados</h3>
-                    <p className="text-muted-foreground">
+                    <p style={{ color: "#6b7280" }}>
                       Todos os nossos enfermeiros são registrados, experientes e passam por rigoroso processo de seleção
                       e verificação de antecedentes.
                     </p>
@@ -171,12 +203,15 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <Shield className="h-5 w-5 text-primary" />
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
+                    style={{ backgroundColor: "#dcfce7" }}
+                  >
+                    <span>🛡️</span>
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Segurança e Confiança</h3>
-                    <p className="text-muted-foreground">
+                    <p style={{ color: "#6b7280" }}>
                       Plataforma segura com protocolos rigorosos de segurança, garantindo a proteção dos dados e
                       bem-estar dos pacientes.
                     </p>
@@ -184,12 +219,15 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <Clock className="h-5 w-5 text-primary" />
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
+                    style={{ backgroundColor: "#dcfce7" }}
+                  >
+                    <span>⏰</span>
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Disponibilidade Flexível</h3>
-                    <p className="text-muted-foreground">
+                    <p style={{ color: "#6b7280" }}>
                       Agendamento flexível que se adapta às suas necessidades, com opções de cuidados pontuais ou
                       contínuos.
                     </p>
@@ -198,33 +236,47 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-secondary/50 rounded-2xl p-8">
+            <div className="rounded-2xl p-8" style={{ backgroundColor: "#f0fdf4" }}>
               <div className="text-center">
                 <div className="grid grid-cols-2 gap-8 mb-8">
                   <div>
-                    <div className="text-3xl font-bold text-primary mb-2">500+</div>
-                    <div className="text-sm text-muted-foreground">Enfermeiros Cadastrados</div>
+                    <div className="text-3xl font-bold mb-2" style={{ color: "#15803d" }}>
+                      500+
+                    </div>
+                    <div className="text-sm" style={{ color: "#6b7280" }}>
+                      Enfermeiros Cadastrados
+                    </div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-primary mb-2">2000+</div>
-                    <div className="text-sm text-muted-foreground">Pacientes Atendidos</div>
+                    <div className="text-3xl font-bold mb-2" style={{ color: "#15803d" }}>
+                      2000+
+                    </div>
+                    <div className="text-sm" style={{ color: "#6b7280" }}>
+                      Pacientes Atendidos
+                    </div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-primary mb-2">4.9</div>
-                    <div className="text-sm text-muted-foreground">Avaliação Média</div>
+                    <div className="text-3xl font-bold mb-2" style={{ color: "#15803d" }}>
+                      4.9
+                    </div>
+                    <div className="text-sm" style={{ color: "#6b7280" }}>
+                      Avaliação Média
+                    </div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-primary mb-2">24/7</div>
-                    <div className="text-sm text-muted-foreground">Suporte Disponível</div>
+                    <div className="text-3xl font-bold mb-2" style={{ color: "#15803d" }}>
+                      24/7
+                    </div>
+                    <div className="text-sm" style={{ color: "#6b7280" }}>
+                      Suporte Disponível
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex justify-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-accent fill-current" />
-                  ))}
+                  <span className="text-2xl">⭐⭐⭐⭐⭐</span>
                 </div>
-                <p className="text-sm text-muted-foreground italic">
+                <p className="text-sm italic" style={{ color: "#6b7280" }}>
                   "Excelente serviço! Os enfermeiros são muito profissionais e atenciosos. Recomendo para qualquer
                   pessoa que precise de cuidados domiciliares."
                 </p>
@@ -236,23 +288,26 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
+      <section className="py-20" style={{ backgroundColor: "#15803d", color: "white" }}>
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-balance">Pronto para Receber o Melhor Cuidado?</h2>
-          <p className="text-xl mb-8 text-primary-foreground/90 max-w-2xl mx-auto text-pretty">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-balance" style={{ color: "white" }}>
+            Pronto para Receber o Melhor Cuidado?
+          </h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto text-pretty" style={{ color: "rgba(255, 255, 255, 0.9)" }}>
             Cadastre-se agora e conecte-se com enfermeiros qualificados na sua região. Seu bem-estar é nossa prioridade.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register">
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
+            <Link href="/register-user">
+              <Button size="lg" className="text-lg px-8 py-3" style={{ backgroundColor: "white", color: "#15803d" }}>
                 Cadastrar como Paciente
               </Button>
             </Link>
-            <Link href="/register">
+            <Link href="/register-nurse">
               <Button
                 size="lg"
                 variant="outline"
-                className="text-lg px-8 py-3 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
+                className="text-lg px-8 py-3 bg-transparent"
+                style={{ borderColor: "rgba(255, 255, 255, 0.2)", color: "white", backgroundColor: "transparent" }}
               >
                 Cadastrar como Enfermeiro
               </Button>
@@ -262,12 +317,12 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-muted py-12">
+      <footer className="py-12" style={{ backgroundColor: "#f3f4f6" }}>
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <h3 className="font-bold text-lg mb-4">MedAssist</h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm" style={{ color: "#6b7280" }}>
                 Conectando cuidado e confiança através de uma plataforma segura e profissional de serviços de
                 enfermagem.
               </p>
@@ -275,24 +330,24 @@ export default function Home() {
 
             <div>
               <h4 className="font-semibold mb-4">Serviços</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-2 text-sm" style={{ color: "#6b7280" }}>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     Cuidados Domiciliares
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     Cuidados Pós-Operatórios
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     Atendimento 24h
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     Cuidados Geriátricos
                   </a>
                 </li>
@@ -301,24 +356,24 @@ export default function Home() {
 
             <div>
               <h4 className="font-semibold mb-4">Empresa</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-2 text-sm" style={{ color: "#6b7280" }}>
                 <li>
-                  <a href="/sobre" className="hover:text-primary transition-colors">
+                  <a href="/sobre" className="hover:text-green-700 transition-colors">
                     Sobre Nós
                   </a>
                 </li>
                 <li>
-                  <a href="/contato" className="hover:text-primary transition-colors">
+                  <a href="/contato" className="hover:text-green-700 transition-colors">
                     Contato
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     Carreiras
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     Blog
                   </a>
                 </li>
@@ -327,24 +382,24 @@ export default function Home() {
 
             <div>
               <h4 className="font-semibold mb-4">Suporte</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-2 text-sm" style={{ color: "#6b7280" }}>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     Central de Ajuda
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     Política de Privacidade
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     Termos de Uso
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-green-700 transition-colors">
                     FAQ
                   </a>
                 </li>
@@ -352,7 +407,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
+          <div className="mt-8 pt-8 text-center text-sm" style={{ borderTop: "1px solid #d1d5db", color: "#6b7280" }}>
             <p>&copy; 2024 MedAssist. Todos os direitos reservados.</p>
           </div>
         </div>
