@@ -55,10 +55,8 @@ export default function RegisterForm() {
   }
 
   const formatPhone = (value: string) => {
-    // Remove tudo que não é dígito
     const numbers = value.replace(/\D/g, "")
 
-    // Aplica a máscara (XX) XXXXX-XXXX
     if (numbers.length <= 11) {
       return numbers.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2")
     }

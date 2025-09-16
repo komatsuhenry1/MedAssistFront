@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function Header() {
   return (
@@ -31,7 +37,22 @@ export function Header() {
             </Button>
           </Link>
           <Link href="/register">
-            <Button size="sm">Cadastrar</Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger>Cadastro</DropdownMenuTrigger>
+            <DropdownMenuContent>
+            <Link href="/register">
+              <Button variant="ghost" size="sm">
+                Paciente
+              </Button>
+            </Link>
+              <DropdownMenuSeparator />
+            <Link href="/register">
+              <Button variant="ghost" size="sm">
+                Enfermeiro(a)
+              </Button>
+            </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
           </Link>
         </div>
       </div>
