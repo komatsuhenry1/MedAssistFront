@@ -36,24 +36,22 @@ export function Header() {
               Login
             </Button>
           </Link>
-          <Link href="/register">
           <DropdownMenu>
             <DropdownMenuTrigger>Cadastro</DropdownMenuTrigger>
             <DropdownMenuContent>
-            <Link href="/register">
+            <Link href="/register-patient">
               <Button variant="ghost" size="sm">
                 Paciente
               </Button>
             </Link>
               <DropdownMenuSeparator />
-            <Link href="/register">
+            <Link href="/register-nurse">
               <Button variant="ghost" size="sm">
                 Enfermeiro(a)
               </Button>
             </Link>
             </DropdownMenuContent>
           </DropdownMenu>
-          </Link>
         </div>
       </div>
     </header>
