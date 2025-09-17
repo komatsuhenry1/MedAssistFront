@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 import Link from "next/link"
 
 export default function PatientRegisterPage() {
@@ -20,22 +21,37 @@ export default function PatientRegisterPage() {
     password: "",
   })
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Here you would send to your API endpoint
-    console.log("Patient registration data:", formData)
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    // Example API call structure:
-    // const response = await fetch('/api/auth/patient', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(formData)
-    // })
+    try {
+      const registerUrl = `${API_BASE_URL}/auth/user`;
+
+      const res = await fetch(registerUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await res.json()
+      console.log("Resposta da API:", data)
+
+
+      if (data.success) {
+        toast.success("Cadastro realizado com sucesso! Realize o login no sistema!")
+      } else {
+        toast.error("Erro ao realizar cadastro.")
+      }
+    } catch (error) {
+      console.error("Erro no cadastro:", error)
+    }
   }
 
   return (
@@ -111,9 +127,10 @@ export default function PatientRegisterPage() {
                     <Label htmlFor="name">Nome Completo *</Label>
                     <Input
                       id="name"
+                      name="name"
                       placeholder="Seu nome completo"
                       value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      onChange={handleInputChange}
                       required
                     />
                   </div>
@@ -122,10 +139,10 @@ export default function PatientRegisterPage() {
                     <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
-                      type="email"
+                      name="email"
                       placeholder="seu@email.com"
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={handleInputChange}
                       required
                     />
                   </div>
@@ -134,9 +151,10 @@ export default function PatientRegisterPage() {
                     <Label htmlFor="phone">Telefone *</Label>
                     <Input
                       id="phone"
+                      name="phone"
                       placeholder="(11) 99999-9999"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      onChange={handleInputChange}
                       required
                     />
                   </div>
@@ -145,9 +163,10 @@ export default function PatientRegisterPage() {
                     <Label htmlFor="address">Endereço Completo *</Label>
                     <Input
                       id="address"
+                      name="address"
                       placeholder="Rua, número, bairro, cidade - UF"
                       value={formData.address}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
+                      onChange={handleInputChange}
                       required
                     />
                   </div>
@@ -156,9 +175,10 @@ export default function PatientRegisterPage() {
                     <Label htmlFor="cpf">CPF *</Label>
                     <Input
                       id="cpf"
+                      name="cpf"
                       placeholder="000.000.000-00"
                       value={formData.cpf}
-                      onChange={(e) => handleInputChange("cpf", e.target.value)}
+                      onChange={handleInputChange}
                       required
                     />
                   </div>
@@ -167,10 +187,11 @@ export default function PatientRegisterPage() {
                     <Label htmlFor="password">Senha *</Label>
                     <Input
                       id="password"
+                      name="password"
                       type="password"
                       placeholder="Mínimo 8 caracteres"
                       value={formData.password}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
+                      onChange={handleInputChange}
                       required
                       minLength={8}
                     />
