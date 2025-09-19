@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Upload, FileText, Shield, Heart, CheckCircle } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -41,35 +42,43 @@ export default function RegisterPage() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    console.log(formData)
+    const formDataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      console.log(key, value)
+      if (value) {
+        formDataToSend.append(key, value);
+      }
+    });
 
-    const formDataToSend = new FormData()
-    formDataToSend.append("name", formData.name)
-    formDataToSend.append("email", formData.email)
-    formDataToSend.append("phone", formData.phone)
-    formDataToSend.append("address", formData.address)
-    formDataToSend.append("cpf", formData.cpf)
-    formDataToSend.append("password", formData.password)
-    formDataToSend.append("license_number", formData.license_number)
-    formDataToSend.append("specialization", formData.specialization)
-    formDataToSend.append("shift", formData.shift)
-    formDataToSend.append("department", formData.department)
-    formDataToSend.append("years_experience", formData.years_experience)
+    try {
+      console.log("Dados a serem enviados:", formDataToSend);
 
-    if (formData.qualifications) formDataToSend.append("qualifications", formData.qualifications)
-    if (formData.general_register) formDataToSend.append("general_register", formData.general_register)
-    if (formData.residence_comprovant) formDataToSend.append("residence_comprovant", formData.residence_comprovant)
-    if (formData.license_document) formDataToSend.append("license_document", formData.license_document)
+      const registerUrl = `http://localhost:8081/api/v1/auth/nurse`;
 
-    // Here you would send to your API endpoint
-    console.log("Form data ready to send:", formDataToSend)
-  }
+      const response = await fetch(registerUrl, {
+        method: "POST",
+        body: formDataToSend,
+      });
+
+      if (response.ok) {
+        toast.success("Cadastro realizado com sucesso!");
+      } else {
+        const errorData = await response.json();
+        toast.error("Erro ao cadastrar:", errorData);
+      }
+    } catch (error) {
+      console.error("Erro de rede ou na requisição:", error);
+      alert("Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.");
+    }
+  };
 
   return (
     <>
       <Header />
 
-      {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary to-primary/90 text-primary-foreground py-16">
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-4 text-sm font-medium">

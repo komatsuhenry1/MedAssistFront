@@ -8,227 +8,440 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
+import { toast } from "sonner"
 
-// Tipos para os dados da API
-type Document = {
-    name: string
-    type: string
-    download_url: string
+interface DashboardData {
+  total_nurses: number
+  total_patients: number
+  visits_today: number
+  pendent_approvations: number
+  nurses_ids_pendent_approvations: string[]
 }
 
-type Nurse = {
-    id: string
-    name: string // Será um placeholder por enquanto
-    email: string // Será um placeholder por enquanto
-    specialization: string // Será um placeholder por enquanto
-    documents?: Document[]
+interface Document {
+  name: string
+  type: string
+  download_url: string
 }
 
-type DashboardData = {
-    total_nurses: number
-    total_patients: number
-    visits_today: number
-    pendent_approvations: number
+interface DocumentsResponse {
+  data: Document[]
+  message: string
+  success: boolean
 }
 
 export default function AdminDashboard() {
-    const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
-    const [pendingNurses, setPendingNurses] = useState<Nurse[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [isDialogOpen, setIsDialogOpen] = useState(false)
-    const [selectedNurse, setSelectedNurse] = useState<Nurse | null>(null)
-    const [isApproving, setIsApproving] = useState(false)
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [selectedNurseDocuments, setSelectedNurseDocuments] = useState<Document[]>([])
+  const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [documentsLoading, setDocumentsLoading] = useState(false)
 
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) throw new Error("Usuário não autenticado.");
-                
-                const headers = { 'Authorization': `Bearer ${token}` };
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem("token")
 
-                // 1. Buscar os dados do dashboard para pegar os IDs
-                const dashboardResponse = await fetch("http://localhost:8081/api/v1/admin/dashboard", { headers });
-                if (!dashboardResponse.ok) throw new Error("Falha ao carregar dados do dashboard.");
-                
-                const dashboardApiData = await dashboardResponse.json();
-                if (!dashboardApiData.success) throw new Error(dashboardApiData.message);
-
-                setDashboardData(dashboardApiData.data);
-
-                // 2. MUDANÇA: Usar os IDs para buscar os DOCUMENTOS de cada enfermeiro
-                const nurseIds: string[] = dashboardApiData.data.nurses_ids_pendent_approvations;
-                
-                if (nurseIds && nurseIds.length > 0) {
-                    const nursesPromises = nurseIds.map(async (id) => {
-                        // Chamando o endpoint de documentos que você especificou
-                        const res = await fetch(`http://localhost:8081/api/v1/admin/documents/${id}`, { headers });
-                        if (!res.ok) {
-                            console.error(`Falha ao buscar documentos para o ID: ${id}`);
-                            return null; // Retorna nulo se a chamada falhar
-                        }
-                        const result = await res.json();
-                        if (result.success) {
-                            // Criamos um objeto "Nurse" temporário com os dados que temos
-                            return {
-                                id: id,
-                                // DADOS TEMPORÁRIOS (PLACEHOLDERS)
-                                name: `Cadastro Pendente`,
-                                email: `ID: ...${id.slice(-6)}`,
-                                specialization: "Aguardando detalhes",
-                                documents: result.data // Pré-carregamos os documentos aqui
-                            };
-                        }
-                        return null;
-                    });
-                    
-                    const nursesResults = await Promise.all(nursesPromises);
-                    
-                    // Filtramos para remover qualquer resultado nulo de chamadas que falharam
-                    const validNurses = nursesResults.filter(nurse => nurse !== null) as Nurse[];
-                    setPendingNurses(validNurses);
-                }
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Ocorreu um erro desconhecido.");
-                console.error(err);
-            } finally {
-                setIsLoading(false);
-            }
+      const response = await fetch("http://localhost:8081/api/v1/admin/dashboard", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` // padrão Bearer token
         }
+      })   
+      const result = await response.json()
+      console.log("result:", result)
 
-        fetchInitialData();
-    }, []);
-
-    // MUDANÇA: Função muito mais simples agora!
-    const handleOpenDialog = (nurse: Nurse) => {
-        // Apenas abre o Dialog, pois os documentos já foram carregados
-        setSelectedNurse(nurse);
-        setIsDialogOpen(true);
+      if (result.success) {
+        setDashboardData(result.data)
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados do dashboard:", error)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    // Função de aprovação (permanece igual, já estava correta)
-    const handleApprove = async (nurseId: string) => {
-        setIsApproving(true);
-        try {
-            const token = localStorage.getItem('authToken');
-            if (!token) throw new Error("Usuário não autenticado.");
-            
-            const response = await fetch(`http://localhost:8081/api/v1/admin/approve/${nurseId}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error("Falha ao aprovar o cadastro.");
-
-            setPendingNurses((currentNurses) => currentNurses.filter((nurse) => nurse.id !== nurseId));
-            setIsDialogOpen(false);
-            setSelectedNurse(null);
-            
-        } catch (error) {
-            console.error("Erro ao aprovar enfermeiro:", error);
-            setError(error instanceof Error ? error.message : "Ocorreu um erro desconhecido.");
-        } finally {
-            setIsApproving(false);
+  const fetchNurseDocuments = async (nurseId: string) => {
+    setDocumentsLoading(true)
+    try {
+      const response = await fetch(`http://localhost:8081/api/v1/admin/documents/${nurseId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
         }
+      })
+      const result: DocumentsResponse = await response.json()
+
+      if (result.success) {
+        setSelectedNurseDocuments(result.data)
+        setIsDocumentsModalOpen(true)
+      }
+    } catch (error) {
+      console.error("Erro ao carregar documentos do enfermeiro:", error)
+    } finally {
+      setDocumentsLoading(false)
     }
+  }
 
-    if (isLoading) return <div>Carregando dashboard...</div>
-    if (error) return <div>Erro: {error}</div>
+  const approveNurse = async (nurseId: string) => {
+    console.log("aprovou enfermeiro")
+    try {
+      const response = await fetch(`http://localhost:8081/api/v1/admin/approve/${nurseId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      })
+      const result = await response.json()
 
+      if (result.success) {
+        toast.success("Enfermeiro aprovado com sucesso!")
+        fetchDashboardData()
+      }
+    } catch (error) {
+      console.error("Erro ao aprovar", error)
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const [recentActivities] = useState([
+    { id: 1, action: "Novo cadastro de paciente", user: "João Silva", time: "2 min atrás" },
+    { id: 2, action: "Enfermeiro aprovado", user: "Ana Costa", time: "15 min atrás" },
+    { id: 3, action: "Consulta agendada", user: "Pedro Lima", time: "1h atrás" },
+    { id: 4, action: "Documento enviado", user: "Maria Santos", time: "2h atrás" },
+  ])
+
+  if (loading) {
     return (
-        <div className="min-h-screen bg-slate-50">
-            {/* ... Seu Header e Cards de Stats ... */}
-            <section className="p-4 md:p-8 max-w-7xl mx-auto">
-                <Tabs defaultValue="pending" className="w-full">
-                    {/* ... */}
-                    <TabsContent value="pending">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Enfermeiros Aguardando Aprovação</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Nome</TableHead>
-                                            <TableHead>Email</TableHead>
-                                            <TableHead>Especialização</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Ações</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {pendingNurses.length > 0 ? (
-                                            pendingNurses.map((nurse) => (
-                                                <TableRow key={nurse.id}>
-                                                    {/* MUDANÇA: Exibindo os dados temporários */}
-                                                    <TableCell className="font-medium">{nurse.name}</TableCell>
-                                                    <TableCell>{nurse.email}</TableCell>
-                                                    <TableCell>{nurse.specialization}</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline" className="text-amber-500 border-amber-500">
-                                                            Pendente
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Button size="sm" onClick={() => handleOpenDialog(nurse)}>
-                                                            Visualizar
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        ) : (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="text-center">Nenhuma aprovação pendente.</TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-            </section>
-            
-            {selectedNurse && (
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Revisar Documentos</DialogTitle>
-                            <DialogDescription>
-                                Verifique os documentos para o cadastro com ID: {selectedNurse.id}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="font-semibold">Documentos Enviados</div>
-                            {/* Não precisamos mais de "isLoadingDocuments" aqui */}
-                            <ul className="list-disc pl-5 space-y-2">
-                                {selectedNurse.documents?.map((doc, index) => (
-                                    <li key={index}>
-                                        <a href={doc.download_url} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
-                                            {doc.name}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                            <Button onClick={() => handleApprove(selectedNurse.id)} disabled={isApproving}>
-                                {isApproving ? "Aprovando..." : "Aprovar"}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            )}
+      <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
+        <Header />
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+          <p>Carregando dados do dashboard...</p>
         </div>
+      </div>
     )
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
+      <Header />
+
+      {/* Hero Section */}
+      <section
+        style={{
+          background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
+          color: "white",
+          padding: "4rem 1rem 2rem",
+        }}
+      >
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Dashboard Administrativo</h1>
+          <p style={{ fontSize: "1.25rem", opacity: 0.9 }}>
+            Gerencie usuários, monitore atividades e acompanhe métricas da plataforma MedAssist
+          </p>
+        </div>
+      </section>
+
+      {/* Stats Cards */}
+      <section style={{ padding: "2rem 1rem", maxWidth: "1200px", margin: "0 auto" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: "1.5rem",
+            marginBottom: "2rem",
+          }}
+        >
+          <Card>
+            <CardHeader style={{ paddingBottom: "0.5rem" }}>
+              <CardTitle style={{ fontSize: "0.875rem", color: "#6b7280" }}>Total de Enfermeiros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#15803d" }}>
+                {dashboardData?.total_nurses || 0}
+              </div>
+              <p style={{ fontSize: "0.875rem", color: "#10b981" }}>Enfermeiros cadastrados</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader style={{ paddingBottom: "0.5rem" }}>
+              <CardTitle style={{ fontSize: "0.875rem", color: "#6b7280" }}>Total de Pacientes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#15803d" }}>
+                {dashboardData?.total_patients || 0}
+              </div>
+              <p style={{ fontSize: "0.875rem", color: "#10b981" }}>Pacientes cadastrados</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader style={{ paddingBottom: "0.5rem" }}>
+              <CardTitle style={{ fontSize: "0.875rem", color: "#6b7280" }}>Consultas Hoje</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#15803d" }}>
+                {dashboardData?.visits_today || 0}
+              </div>
+              <p style={{ fontSize: "0.875rem", color: "#10b981" }}>Atendimentos realizados</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader style={{ paddingBottom: "0.5rem" }}>
+              <CardTitle style={{ fontSize: "0.875rem", color: "#6b7280" }}>Aprovações Pendentes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#dc2626" }}>
+                {dashboardData?.pendent_approvations || 0}
+              </div>
+              <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>Requer atenção</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="pending" style={{ width: "100%" }}>
+          <TabsList style={{ marginBottom: "1.5rem" }}>
+            <TabsTrigger value="pending">Aprovações Pendentes</TabsTrigger>
+            <TabsTrigger value="users">Gerenciar Usuários</TabsTrigger>
+            <TabsTrigger value="activity">Atividades Recentes</TabsTrigger>
+            <TabsTrigger value="reports">Relatórios</TabsTrigger>
+          </TabsList>
+
+          {/* Pending Approvals Tab */}
+          <TabsContent value="pending">
+            <Card>
+              <CardHeader>
+                <CardTitle>Enfermeiros Aguardando Aprovação</CardTitle>
+                <CardDescription>Revise e aprove novos cadastros de enfermeiros</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {dashboardData?.nurses_ids_pendent_approvations &&
+                dashboardData.nurses_ids_pendent_approvations.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID do Enfermeiro</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {dashboardData.nurses_ids_pendent_approvations.map((nurseId) => (
+                        <TableRow key={nurseId}>
+                          <TableCell style={{ fontWeight: "500" }}>{nurseId}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" style={{ color: "#f59e0b", borderColor: "#f59e0b" }}>
+                              Pendente
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div style={{ display: "flex", gap: "0.5rem" }}>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => fetchNurseDocuments(nurseId)}
+                                    disabled={documentsLoading}
+                                  >
+                                    {documentsLoading ? "Carregando..." : "Ver Documentos"}
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent style={{ maxWidth: "600px" }}>
+                                  <DialogHeader>
+                                    <DialogTitle>Documentos do Enfermeiro</DialogTitle>
+                                    <DialogDescription>
+                                      Revise os documentos enviados pelo enfermeiro ID: {nurseId}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+                                    {selectedNurseDocuments.length > 0 ? (
+                                      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                        {selectedNurseDocuments.map((doc, index) => (
+                                          <Card key={index}>
+                                            <CardContent style={{ padding: "1rem" }}>
+                                              <div
+                                                style={{
+                                                  display: "flex",
+                                                  justifyContent: "space-between",
+                                                  alignItems: "center",
+                                                }}
+                                              >
+                                                <div>
+                                                  <h4 style={{ fontWeight: "600", marginBottom: "0.25rem" }}>
+                                                    {doc.name}
+                                                  </h4>
+                                                  <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+                                                    Tipo: {doc.type}
+                                                  </p>
+                                                </div>
+                                                <Button
+                                                  size="sm"
+                                                  onClick={() => window.open(doc.download_url, "_blank")}
+                                                  style={{ backgroundColor: "#15803d", color: "white" }}
+                                                >
+                                                  Download
+                                                </Button>
+                                              </div>
+                                            </CardContent>
+                                          </Card>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p>Nenhum documento encontrado.</p>
+                                    )}
+                                  </div>
+                                  <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+                                    <Button onClick={() => approveNurse(nurseId)} style={{ backgroundColor: "#15803d", color: "white", flex: 1 }}>
+                                      Aprovar
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      style={{ color: "#dc2626", borderColor: "#dc2626", flex: 1 }}
+                                    >
+                                      Rejeitar
+                                    </Button>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              <Button size="sm" onClick={() => approveNurse(nurseId)} style={{ backgroundColor: "#15803d", color: "white" }}>
+                                Aprovar
+                              </Button>
+                              <Button size="sm" variant="outline" style={{ color: "#dc2626", borderColor: "#dc2626" }}>
+                                Rejeitar
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p style={{ textAlign: "center", color: "#6b7280", padding: "2rem" }}>
+                    Nenhum enfermeiro pendente de aprovação no momento.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Users Management Tab */}
+          <TabsContent value="users">
+            <div
+              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gerenciar Enfermeiros</CardTitle>
+                  <CardDescription>Visualizar, editar e desativar contas de enfermeiros</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button style={{ backgroundColor: "#15803d", color: "white", width: "100%" }}>
+                    Ver Todos os Enfermeiros
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gerenciar Pacientes</CardTitle>
+                  <CardDescription>Visualizar, editar e desativar contas de pacientes</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button style={{ backgroundColor: "#15803d", color: "white", width: "100%" }}>
+                    Ver Todos os Pacientes
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Recent Activity Tab */}
+          <TabsContent value="activity">
+            <Card>
+              <CardHeader>
+                <CardTitle>Atividades Recentes</CardTitle>
+                <CardDescription>Acompanhe as últimas ações na plataforma</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div style={{ display: "grid", gap: "1rem" }}>
+                  {recentActivities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "1rem",
+                        borderBottom: "1px solid #e5e7eb",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      <div>
+                        <p style={{ fontWeight: "500", marginBottom: "0.25rem" }}>{activity.action}</p>
+                        <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>por {activity.user}</p>
+                      </div>
+                      <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>{activity.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="reports">
+            <div
+              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Relatório de Usuários</CardTitle>
+                  <CardDescription>Estatísticas detalhadas de cadastros e atividade</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button style={{ backgroundColor: "#15803d", color: "white", width: "100%" }}>Gerar Relatório</Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Relatório de Consultas</CardTitle>
+                  <CardDescription>Métricas de agendamentos e atendimentos</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button style={{ backgroundColor: "#15803d", color: "white", width: "100%" }}>Gerar Relatório</Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Relatório Financeiro</CardTitle>
+                  <CardDescription>Análise de receitas e transações</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button style={{ backgroundColor: "#15803d", color: "white", width: "100%" }}>Gerar Relatório</Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </section>
+    </div>
+  )
 }
