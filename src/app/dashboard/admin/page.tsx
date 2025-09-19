@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "sonner"
 
 interface DashboardData {
   total_nurses: number
@@ -111,24 +112,28 @@ export default function AdminDashboard() {
     try {
       const token = localStorage.getItem("token")
       const response = await fetch(`http://localhost:8081/api/v1/admin/approve/${nurseId}`, {
-        method: "POST",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       })
+
+      // O que mudou:
+      // 1. Lemos a resposta como JSON imediatamente, pois sabemos que a API sempre retorna JSON.
       const result = await response.json()
 
+      // 2. Usamos a propriedade `success` do JSON retornado para controlar o fluxo.
       if (result.success) {
         await fetchDashboardData()
         setIsDocumentsModalOpen(false)
-        alert("Enfermeiro aprovado com sucesso!")
+        toast.success(result.message) // Usamos a mensagem da API!
       } else {
-        alert("Erro ao aprovar enfermeiro: " + result.message)
+        toast.error("Erro ao aprovar enfermeiro: " + result.message)
       }
     } catch (error) {
       console.error("Erro ao aprovar enfermeiro:", error)
-      alert("Erro ao aprovar enfermeiro. Tente novamente.")
+      toast.error("Erro na requisição. Verifique sua conexão e tente novamente.")
     } finally {
       setApprovalLoading(false)
     }
@@ -155,13 +160,13 @@ export default function AdminDashboard() {
         setIsDocumentsModalOpen(false)
         setShowRejectionSelect(false)
         setRejectionReason("")
-        alert("Enfermeiro rejeitado com sucesso!")
+        toast.success("Enfermeiro rejeitado com sucesso!")
       } else {
-        alert("Erro ao rejeitar enfermeiro: " + result.message)
+        toast.success("Erro ao rejeitar enfermeiro: " + result.message)
       }
     } catch (error) {
       console.error("Erro ao rejeitar enfermeiro:", error)
-      alert("Erro ao rejeitar enfermeiro. Tente novamente.")
+      toast.error("Erro ao rejeitar enfermeiro. Tente novamente.")
     } finally {
       setApprovalLoading(false)
     }

@@ -163,3 +163,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+[data-sonner-toast] [data-description] {
+  color: var(--foreground) !important;
+}

@@ -67,7 +67,11 @@ export default function RegisterPage() {
         toast.success("Cadastro realizado com sucesso!");
       } else {
         const errorData = await response.json();
-        toast.error("Erro ao cadastrar:", errorData);
+        console.log("errorData: ", errorData);
+        
+        toast.error("Erro ao cadastrar", {
+          description: errorData.message,
+        });
       }
     } catch (error) {
       console.error("Erro de rede ou na requisição:", error);
@@ -276,11 +280,12 @@ export default function RegisterPage() {
                           <SelectValue placeholder="Selecione sua experiência" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="0-1">Menos de 1 ano</SelectItem>
-                          <SelectItem value="1-3">1 a 3 anos</SelectItem>
-                          <SelectItem value="3-5">3 a 5 anos</SelectItem>
-                          <SelectItem value="5-10">5 a 10 anos</SelectItem>
-                          <SelectItem value="10+">Mais de 10 anos</SelectItem>
+                          {/* O que mudou: alteramos os `value`s para serem números inteiros */}
+                          <SelectItem value="0">Menos de 1 ano</SelectItem>
+                          <SelectItem value="1">1 a 3 anos</SelectItem>
+                          <SelectItem value="3">3 a 5 anos</SelectItem>
+                          <SelectItem value="5">5 a 10 anos</SelectItem>
+                          <SelectItem value="10">Mais de 10 anos</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
