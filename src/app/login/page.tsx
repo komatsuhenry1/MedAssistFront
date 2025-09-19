@@ -16,6 +16,7 @@ import { toast } from "sonner"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" })
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,6 +26,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    setIsSubmitting(true);
 
     // mova a variável para dentro da função que a utiliza
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -49,19 +52,26 @@ export default function LoginPage() {
         localStorage.setItem("token", data.data.token)
 
         if (role === "NURSE") {
+          toast.success("Login realizado com sucesso!")
           router.push("/dashboard/nurse")
         } else if (role === "ADMIN") {
+          toast.success("Login realizado com sucesso!")
           router.push("/dashboard/admin")
         } else if (role === "PATIENT") {
+          toast.success("Login realizado com sucesso!")
           router.push("/visit/nurses-list")
         } else {
           router.push("/")
         }
       } else {
-        toast.error("Credenciais inválidas!")
+        console.log()
+        toast.error(data.message)
       }
     } catch (error) {
       console.error("Erro no login:", error)
+    } finally {
+      // sempre executa
+      setIsSubmitting(false);
     }
   }
 
@@ -158,9 +168,12 @@ export default function LoginPage() {
                     padding: "0.75rem",
                     fontSize: "1rem",
                     fontWeight: "600",
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                    opacity: isSubmitting ? 0.7 : 1,
                   }}
+                  disabled={isSubmitting}
                 >
-                  Entrar
+                  {isSubmitting ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
 
