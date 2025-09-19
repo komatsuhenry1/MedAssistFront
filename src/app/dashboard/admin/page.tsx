@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { toast } from "sonner"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface DashboardData {
   total_nurses: number
@@ -43,6 +43,20 @@ export default function AdminDashboard() {
   const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [documentsLoading, setDocumentsLoading] = useState(false)
+  const [approvalLoading, setApprovalLoading] = useState(false)
+  const [currentNurseId, setCurrentNurseId] = useState<string>("")
+  const [showRejectionSelect, setShowRejectionSelect] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState("")
+
+  const rejectionReasons = [
+    "Documentos incompletos",
+    "Documentos ilegíveis",
+    "Certificação inválida",
+    "Experiência insuficiente",
+    "Informações inconsistentes",
+    "Documentos vencidos",
+    "Outros motivos",
+  ]
 
   const fetchDashboardData = async () => {
     try {
@@ -52,11 +66,10 @@ export default function AdminDashboard() {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` // padrão Bearer token
-        }
-      })   
+          Authorization: `Bearer ${token}`,
+        },
+      })
       const result = await response.json()
-      console.log("result:", result)
 
       if (result.success) {
         setDashboardData(result.data)
@@ -70,13 +83,15 @@ export default function AdminDashboard() {
 
   const fetchNurseDocuments = async (nurseId: string) => {
     setDocumentsLoading(true)
+    setCurrentNurseId(nurseId)
     try {
+      const token = localStorage.getItem("token")
       const response = await fetch(`http://localhost:8081/api/v1/admin/documents/${nurseId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       })
       const result: DocumentsResponse = await response.json()
 
@@ -92,24 +107,72 @@ export default function AdminDashboard() {
   }
 
   const approveNurse = async (nurseId: string) => {
-    console.log("aprovou enfermeiro")
+    setApprovalLoading(true)
     try {
+      const token = localStorage.getItem("token")
       const response = await fetch(`http://localhost:8081/api/v1/admin/approve/${nurseId}`, {
-        method: "PATCH",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       })
       const result = await response.json()
 
       if (result.success) {
-        toast.success("Enfermeiro aprovado com sucesso!")
-        fetchDashboardData()
+        await fetchDashboardData()
+        setIsDocumentsModalOpen(false)
+        alert("Enfermeiro aprovado com sucesso!")
+      } else {
+        alert("Erro ao aprovar enfermeiro: " + result.message)
       }
     } catch (error) {
-      console.error("Erro ao aprovar", error)
+      console.error("Erro ao aprovar enfermeiro:", error)
+      alert("Erro ao aprovar enfermeiro. Tente novamente.")
+    } finally {
+      setApprovalLoading(false)
     }
+  }
+
+  const rejectNurse = async (nurseId: string, description: string) => {
+    setApprovalLoading(true)
+    try {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`http://localhost:8081/api/v1/admin/reject/${nurseId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          description: description,
+        }),
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        await fetchDashboardData()
+        setIsDocumentsModalOpen(false)
+        setShowRejectionSelect(false)
+        setRejectionReason("")
+        alert("Enfermeiro rejeitado com sucesso!")
+      } else {
+        alert("Erro ao rejeitar enfermeiro: " + result.message)
+      }
+    } catch (error) {
+      console.error("Erro ao rejeitar enfermeiro:", error)
+      alert("Erro ao rejeitar enfermeiro. Tente novamente.")
+    } finally {
+      setApprovalLoading(false)
+    }
+  }
+
+  const handleRejectWithReason = () => {
+    if (!rejectionReason) {
+      alert("Por favor, selecione um motivo para a rejeição.")
+      return
+    }
+    rejectNurse(currentNurseId, rejectionReason)
   }
 
   useEffect(() => {
@@ -307,23 +370,78 @@ export default function AdminDashboard() {
                                     )}
                                   </div>
                                   <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-                                    <Button onClick={() => approveNurse(nurseId)} style={{ backgroundColor: "#15803d", color: "white", flex: 1 }}>
-                                      Aprovar
-                                    </Button>
                                     <Button
-                                      variant="outline"
-                                      style={{ color: "#dc2626", borderColor: "#dc2626", flex: 1 }}
+                                      style={{ backgroundColor: "#15803d", color: "white", flex: 1 }}
+                                      onClick={() => approveNurse(currentNurseId)}
+                                      disabled={approvalLoading}
                                     >
-                                      Rejeitar
+                                      {approvalLoading ? "Aprovando..." : "Aprovar Enfermeiro"}
                                     </Button>
+                                    {!showRejectionSelect ? (
+                                      <Button
+                                        variant="outline"
+                                        style={{ color: "#dc2626", borderColor: "#dc2626", flex: 1 }}
+                                        onClick={() => setShowRejectionSelect(true)}
+                                        disabled={approvalLoading}
+                                      >
+                                        Rejeitar
+                                      </Button>
+                                    ) : (
+                                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                        <Select value={rejectionReason} onValueChange={setRejectionReason}>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Selecione o motivo da rejeição" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {rejectionReasons.map((reason) => (
+                                              <SelectItem key={reason} value={reason}>
+                                                {reason}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              setShowRejectionSelect(false)
+                                              setRejectionReason("")
+                                            }}
+                                            style={{ flex: 1 }}
+                                          >
+                                            Cancelar
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            onClick={handleRejectWithReason}
+                                            disabled={approvalLoading || !rejectionReason}
+                                            style={{ backgroundColor: "#dc2626", color: "white", flex: 1 }}
+                                          >
+                                            {approvalLoading ? "Rejeitando..." : "Confirmar"}
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </DialogContent>
                               </Dialog>
-                              <Button size="sm" onClick={() => approveNurse(nurseId)} style={{ backgroundColor: "#15803d", color: "white" }}>
-                                Aprovar
+                              <Button
+                                size="sm"
+                                style={{ backgroundColor: "#15803d", color: "white" }}
+                                onClick={() => approveNurse(nurseId)}
+                                disabled={approvalLoading}
+                              >
+                                {approvalLoading ? "Aprovando..." : "Aprovar"}
                               </Button>
-                              <Button size="sm" variant="outline" style={{ color: "#dc2626", borderColor: "#dc2626" }}>
-                                Rejeitar
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                style={{ color: "#dc2626", borderColor: "#dc2626" }}
+                                onClick={() => rejectNurse(nurseId, "Rejeição rápida")}
+                                disabled={approvalLoading}
+                              >
+                                {approvalLoading ? "Rejeitando..." : "Rejeitar"}
                               </Button>
                             </div>
                           </TableCell>
@@ -379,7 +497,7 @@ export default function AdminDashboard() {
                 <CardDescription>Acompanhe as últimas ações na plataforma</CardDescription>
               </CardHeader>
               <CardContent>
-                <div style={{ display: "grid", gap: "1rem" }}>
+                <div style={{ padding: "1rem", border: "1px solid #e5e7eb", borderRadius: "1rem" }}>
                   {recentActivities.map((activity) => (
                     <div
                       key={activity.id}
