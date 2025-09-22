@@ -18,12 +18,17 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 
+interface NurseInfo {
+  id: string
+  name: string
+}
+
 interface DashboardData {
   total_nurses: number
   total_patients: number
   visits_today: number
   pendent_approvations: number
-  nurses_ids_pendent_approvations: string[]
+  nurses_ids_pendent_approvations: NurseInfo[]
 }
 
 interface Document {
@@ -46,6 +51,7 @@ export default function AdminDashboard() {
   const [documentsLoading, setDocumentsLoading] = useState(false)
   const [approvalLoading, setApprovalLoading] = useState(false)
   const [currentNurseId, setCurrentNurseId] = useState<string>("")
+  const [currentNurseName, setCurrentNurseName] = useState<string>("")
   const [showRejectionSelect, setShowRejectionSelect] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
 
@@ -82,12 +88,13 @@ export default function AdminDashboard() {
     }
   }
 
-  const fetchNurseDocuments = async (nurseId: string) => {
+  const fetchNurseDocuments = async (nurse: NurseInfo) => {
     setDocumentsLoading(true)
-    setCurrentNurseId(nurseId)
+    setCurrentNurseId(nurse.id)
+    setCurrentNurseName(nurse.name)
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch(`http://localhost:8081/api/v1/admin/documents/${nurseId}`, {
+      const response = await fetch(`http://localhost:8081/api/v1/admin/documents/${nurse.id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -118,22 +125,18 @@ export default function AdminDashboard() {
           Authorization: `Bearer ${token}`,
         },
       })
-
-      // O que mudou:
-      // 1. Lemos a resposta como JSON imediatamente, pois sabemos que a API sempre retorna JSON.
       const result = await response.json()
 
-      // 2. Usamos a propriedade `success` do JSON retornado para controlar o fluxo.
       if (result.success) {
         await fetchDashboardData()
         setIsDocumentsModalOpen(false)
-        toast.success(result.message) // Usamos a mensagem da API!
+        toast.success("Enfermeiro aprovado com sucesso!")
       } else {
         toast.error("Erro ao aprovar enfermeiro: " + result.message)
       }
     } catch (error) {
       console.error("Erro ao aprovar enfermeiro:", error)
-      toast.error("Erro na requisição. Verifique sua conexão e tente novamente.")
+      toast.error("Erro ao aprovar enfermeiro. Tente novamente.")
     } finally {
       setApprovalLoading(false)
     }
@@ -162,7 +165,7 @@ export default function AdminDashboard() {
         setRejectionReason("")
         toast.success("Enfermeiro rejeitado com sucesso!")
       } else {
-        toast.success("Erro ao rejeitar enfermeiro: " + result.message)
+        toast.error("Erro ao rejeitar enfermeiro: " + result.message)
       }
     } catch (error) {
       console.error("Erro ao rejeitar enfermeiro:", error)
@@ -303,15 +306,17 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>ID do Enfermeiro</TableHead>
+                        <TableHead>Nome do Enfermeiro</TableHead>
+                        <TableHead>ID</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {dashboardData.nurses_ids_pendent_approvations.map((nurseId) => (
-                        <TableRow key={nurseId}>
-                          <TableCell style={{ fontWeight: "500" }}>{nurseId}</TableCell>
+                      {dashboardData.nurses_ids_pendent_approvations.map((nurse) => (
+                        <TableRow key={nurse.id}>
+                          <TableCell style={{ fontWeight: "500" }}>{nurse.name}</TableCell>
+                          <TableCell style={{ fontSize: "0.875rem", color: "#6b7280" }}>{nurse.id}</TableCell>
                           <TableCell>
                             <Badge variant="outline" style={{ color: "#f59e0b", borderColor: "#f59e0b" }}>
                               Pendente
@@ -324,7 +329,7 @@ export default function AdminDashboard() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => fetchNurseDocuments(nurseId)}
+                                    onClick={() => fetchNurseDocuments(nurse)}
                                     disabled={documentsLoading}
                                   >
                                     {documentsLoading ? "Carregando..." : "Ver Documentos"}
@@ -334,7 +339,7 @@ export default function AdminDashboard() {
                                   <DialogHeader>
                                     <DialogTitle>Documentos do Enfermeiro</DialogTitle>
                                     <DialogDescription>
-                                      Revise os documentos enviados pelo enfermeiro ID: {nurseId}
+                                      Revise os documentos enviados por {currentNurseName} (ID: {currentNurseId})
                                     </DialogDescription>
                                   </DialogHeader>
                                   <div style={{ maxHeight: "400px", overflowY: "auto" }}>
@@ -434,7 +439,7 @@ export default function AdminDashboard() {
                               <Button
                                 size="sm"
                                 style={{ backgroundColor: "#15803d", color: "white" }}
-                                onClick={() => approveNurse(nurseId)}
+                                onClick={() => approveNurse(nurse.id)}
                                 disabled={approvalLoading}
                               >
                                 {approvalLoading ? "Aprovando..." : "Aprovar"}
@@ -443,7 +448,7 @@ export default function AdminDashboard() {
                                 size="sm"
                                 variant="outline"
                                 style={{ color: "#dc2626", borderColor: "#dc2626" }}
-                                onClick={() => rejectNurse(nurseId, "Rejeição rápida")}
+                                onClick={() => rejectNurse(nurse.id, "Rejeição rápida")}
                                 disabled={approvalLoading}
                               >
                                 {approvalLoading ? "Rejeitando..." : "Rejeitar"}
@@ -502,7 +507,7 @@ export default function AdminDashboard() {
                 <CardDescription>Acompanhe as últimas ações na plataforma</CardDescription>
               </CardHeader>
               <CardContent>
-                <div style={{ padding: "1rem", border: "1px solid #e5e7eb", borderRadius: "1rem" }}>
+                <div style={{ padding: "1rem" }}>
                   {recentActivities.map((activity) => (
                     <div
                       key={activity.id}

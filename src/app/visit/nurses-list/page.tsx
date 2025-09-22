@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,103 +9,84 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
 
-//APLICAR LOGICA DE CHAMAR A API PRA PEGAR ENFERMEIRAS
+interface Nurse {
+  id: string
+  name: string
+  specialization: string
+  years_experience: number
+  price: number
+  shift: string
+  department: string
+  image: string
+  available: boolean
+  location: string
+}
 
-// Mock data for nurses
-const nurses = [
-  {
-    id: 1,
-    name: "Ana Silva",
-    specialization: "Pediatria",
-    experience: 5,
-    rating: 4.8,
-    price: 80,
-    shift: "Manhã",
-    department: "Departamento de Pediatria",
-    image: "/nurse-woman-professional.jpg",
-    available: true,
-    location: "São Paulo - SP",
-  },
-  {
-    id: 2,
-    name: "Carlos Santos",
-    specialization: "UTI",
-    experience: 8,
-    rating: 4.9,
-    price: 120,
-    shift: "Noite",
-    department: "Unidade de Terapia Intensiva",
-    image: "/nurse-man-professional.jpg",
-    available: true,
-    location: "São Paulo - SP",
-  },
-  {
-    id: 3,
-    name: "Maria Oliveira",
-    specialization: "Cardiologia",
-    experience: 12,
-    rating: 4.7,
-    price: 100,
-    shift: "Tarde",
-    department: "Departamento de Cardiologia",
-    image: "/nurse-woman-cardiology.jpg",
-    available: false,
-    location: "São Paulo - SP",
-  },
-  {
-    id: 4,
-    name: "João Pereira",
-    specialization: "Ortopedia",
-    experience: 6,
-    rating: 4.6,
-    price: 90,
-    shift: "Manhã",
-    department: "Departamento de Ortopedia",
-    image: "/nurse-man-orthopedics.jpg",
-    available: true,
-    location: "São Paulo - SP",
-  },
-  {
-    id: 5,
-    name: "Fernanda Costa",
-    specialization: "Neurologia",
-    experience: 10,
-    rating: 4.9,
-    price: 110,
-    shift: "Tarde",
-    department: "Departamento de Neurologia",
-    image: "/nurse-woman-neurology.jpg",
-    available: true,
-    location: "São Paulo - SP",
-  },
-  {
-    id: 6,
-    name: "Roberto Lima",
-    specialization: "Emergência",
-    experience: 7,
-    rating: 4.8,
-    price: 95,
-    shift: "Noite",
-    department: "Pronto Socorro",
-    image: "/nurse-man-emergency.jpg",
-    available: true,
-    location: "São Paulo - SP",
-  },
-]
+interface ApiResponse {
+  data: Nurse[]
+  message: string
+  success: boolean
+}
 
 export default function PatientDashboard() {
+  const [nurses, setNurses] = useState<Nurse[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const [searchTerm, setSearchTerm] = useState("")
   const [specializationFilter, setSpecializationFilter] = useState("")
   const [shiftFilter, setShiftFilter] = useState("")
   const [availabilityFilter, setAvailabilityFilter] = useState("")
   const [priceRange, setPriceRange] = useState("")
 
+  useEffect(() => {
+    const fetchNurses = async () => {
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      console.log("URL da API:", API_BASE_URL);
+
+      try {
+        setLoading(true)
+        const allNursesUrl = `${API_BASE_URL}/user/all_nurses`;
+        const token = localStorage.getItem("token")
+
+        const res = await fetch(allNursesUrl, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        })
+  
+        if (!res.ok) {
+          throw new Error("Falha ao carregar enfermeiros")
+        }
+
+        const data: ApiResponse = await res.json()
+
+        if (data.success) {
+          setNurses(data.data)
+        } else {
+          throw new Error(data.message || "Erro ao carregar dados")
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Erro desconhecido")
+        console.error("Erro ao buscar enfermeiros:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchNurses()
+  }, [])
+
   const filteredNurses = nurses.filter((nurse) => {
     const matchesSearch =
       nurse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       nurse.specialization.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesSpecialization = !specializationFilter || nurse.specialization === specializationFilter
-    const matchesShift = !shiftFilter || nurse.shift === shiftFilter
+    const matchesSpecialization =
+      !specializationFilter || nurse.specialization.toLowerCase() === specializationFilter.toLowerCase()
+    const matchesShift = !shiftFilter || nurse.shift.toLowerCase() === shiftFilter.toLowerCase()
     const matchesAvailability =
       !availabilityFilter ||
       (availabilityFilter === "available" && nurse.available) ||
@@ -119,12 +100,56 @@ export default function PatientDashboard() {
     return matchesSearch && matchesSpecialization && matchesShift && matchesAvailability && matchesPrice
   })
 
+  const uniqueSpecializations = Array.from(new Set(nurses.map((nurse) => nurse.specialization)))
+  const uniqueShifts = Array.from(new Set(nurses.map((nurse) => nurse.shift)))
+
   const clearFilters = () => {
     setSearchTerm("")
     setSpecializationFilter("")
     setShiftFilter("")
     setAvailabilityFilter("")
     setPriceRange("")
+  }
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
+        <Header />
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+          <div style={{ textAlign: "center" }}>
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                border: "4px solid #e5e7eb",
+                borderTop: "4px solid #15803d",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                margin: "0 auto 1rem",
+              }}
+            ></div>
+            <p style={{ color: "#6b7280" }}>Carregando enfermeiros...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
+        <Header />
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+          <div style={{ textAlign: "center", color: "#dc2626" }}>
+            <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>Erro ao carregar dados</h3>
+            <p>{error}</p>
+            <Button onClick={() => window.location.reload()} style={{ marginTop: "1rem", backgroundColor: "#15803d" }}>
+              Tentar Novamente
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -173,12 +198,11 @@ export default function PatientDashboard() {
                   <SelectValue placeholder="Especialização" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Pediatria">Pediatria</SelectItem>
-                  <SelectItem value="UTI">UTI</SelectItem>
-                  <SelectItem value="Cardiologia">Cardiologia</SelectItem>
-                  <SelectItem value="Ortopedia">Ortopedia</SelectItem>
-                  <SelectItem value="Neurologia">Neurologia</SelectItem>
-                  <SelectItem value="Emergência">Emergência</SelectItem>
+                  {uniqueSpecializations.map((spec) => (
+                    <SelectItem key={spec} value={spec}>
+                      {spec.charAt(0).toUpperCase() + spec.slice(1)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -187,9 +211,11 @@ export default function PatientDashboard() {
                   <SelectValue placeholder="Turno" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Manhã">Manhã</SelectItem>
-                  <SelectItem value="Tarde">Tarde</SelectItem>
-                  <SelectItem value="Noite">Noite</SelectItem>
+                  {uniqueShifts.map((shift) => (
+                    <SelectItem key={shift} value={shift}>
+                      {shift.charAt(0).toUpperCase() + shift.slice(1)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -221,6 +247,7 @@ export default function PatientDashboard() {
           </CardContent>
         </Card>
 
+        {/* Results Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
           <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
             {filteredNurses.length} Enfermeiros Encontrados
@@ -239,7 +266,7 @@ export default function PatientDashboard() {
               <CardContent style={{ padding: "1.5rem" }}>
                 <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
                   <img
-                    src={nurse.image || "/placeholder.svg"}
+                    src={nurse.image || "/placeholder.svg?height=80&width=80&query=nurse professional"}
                     alt={nurse.name}
                     style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}
                   />
@@ -261,7 +288,7 @@ export default function PatientDashboard() {
                       </Badge>
                     </div>
                     <p style={{ color: "#15803d", fontWeight: "600", marginBottom: "0.25rem" }}>
-                      {nurse.specialization}
+                      {nurse.specialization.charAt(0).toUpperCase() + nurse.specialization.slice(1)}
                     </p>
                     <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>{nurse.department}</p>
                   </div>
@@ -278,17 +305,15 @@ export default function PatientDashboard() {
                 >
                   <div>
                     <span style={{ color: "#6b7280" }}>Experiência:</span>
-                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.experience} anos</span>
-                  </div>
-                  <div>
-                    <span style={{ color: "#6b7280" }}>Avaliação:</span>
-                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>⭐ {nurse.rating}</span>
+                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.years_experience} anos</span>
                   </div>
                   <div>
                     <span style={{ color: "#6b7280" }}>Turno:</span>
-                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.shift}</span>
+                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>
+                      {nurse.shift.charAt(0).toUpperCase() + nurse.shift.slice(1)}
+                    </span>
                   </div>
-                  <div>
+                  <div style={{ gridColumn: "1 / -1" }}>
                     <span style={{ color: "#6b7280" }}>Localização:</span>
                     <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.location}</span>
                   </div>
@@ -296,11 +321,13 @@ export default function PatientDashboard() {
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <span style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>R$ {nurse.price}</span>
-                    <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>/hora</span>
+                    <span style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
+                      {nurse.price > 0 ? `R$ ${nurse.price}` : "A combinar"}
+                    </span>
+                    {nurse.price > 0 && <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>/hora</span>}
                   </div>
 
-                  <Link href={`/visit/nurses-list/${nurse.id}`}>
+                  <Link href={`/patient/nurse/${nurse.id}`}>
                     <Button
                       style={{
                         backgroundColor: nurse.available ? "#15803d" : "#6b7280",
@@ -317,13 +344,20 @@ export default function PatientDashboard() {
           ))}
         </div>
 
-        {filteredNurses.length === 0 && (
+        {filteredNurses.length === 0 && !loading && (
           <div style={{ textAlign: "center", padding: "3rem", color: "#6b7280" }}>
             <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>Nenhum enfermeiro encontrado</h3>
             <p>Tente ajustar os filtros para encontrar mais opções.</p>
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }
