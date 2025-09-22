@@ -79,13 +79,13 @@ export function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <Link href="/register-patient">
-                    <Button variant="ghost" size="sm">
+                    <Button className="w-full"variant="ghost">
                       Paciente
                     </Button>
                   </Link>
                   <DropdownMenuSeparator />
                   <Link href="/register-nurse">
-                    <Button variant="ghost" size="sm">
+                    <Button className="w-full" variant="ghost">
                       Enfermeiro(a)
                     </Button>
                   </Link>
