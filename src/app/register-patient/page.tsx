@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -20,6 +21,7 @@ export default function PatientRegisterPage() {
     cpf: "",
     password: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -28,6 +30,8 @@ export default function PatientRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    setIsSubmitting(true)
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -51,6 +55,8 @@ export default function PatientRegisterPage() {
       }
     } catch (error) {
       console.error("Erro no cadastro:", error)
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -197,9 +203,22 @@ export default function PatientRegisterPage() {
                     />
                   </div>
 
-                  <div className="pt-4">
-                    <Button type="submit" className="w-full" size="lg" style={{ backgroundColor: "#15803d" }}>
-                      Criar Conta
+                  <div className="pt-6 flex flex-col justify-center" >
+                    <Button
+                      type="submit"
+                      style={{
+                        backgroundColor: "#15803d",
+                        color: "white",
+                        padding: "0.75rem",
+                        fontSize: "1rem",
+                        fontWeight: "600",
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                        opacity: isSubmitting ? 0.7 : 1,
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      <CheckCircle className="mr-2 h-5 w-5" />
+                      {isSubmitting ? "Cadastrando..." : "Finalizar Cadastro"}
                     </Button>
                     <p className="text-xs text-gray-500 text-center mt-3">
                       Ao se cadastrar, você concorda com nossos{" "}

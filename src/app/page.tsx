@@ -32,12 +32,12 @@ export default function Home() {
               personalizados e confiáveis no conforto do seu lar.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register">
+              <Link href="/register-patient">
                 <Button size="lg" className="text-lg px-8 py-3" style={{ backgroundColor: "white", color: "#15803d" }}>
-                  ❤️ Encontrar um Enfermeiro
+                  Encontrar um Enfermeiro
                 </Button>
               </Link>
-              <Link href="/register">
+              <Link href="/register-nurse">
                 <Button
                   size="lg"
                   variant="outline"

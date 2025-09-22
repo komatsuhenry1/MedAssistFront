@@ -32,6 +32,7 @@ export default function RegisterPage() {
     residence_comprovant: null as File | null,
     license_document: null as File | null,
   })
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -43,6 +44,9 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    setIsSubmitting(true);
+
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
     console.log(formData)
     const formDataToSend = new FormData();
@@ -68,7 +72,7 @@ export default function RegisterPage() {
       } else {
         const errorData = await response.json();
         console.log("errorData: ", errorData);
-        
+
         toast.error("Erro ao cadastrar", {
           description: errorData.message,
         });
@@ -76,6 +80,8 @@ export default function RegisterPage() {
     } catch (error) {
       console.error("Erro de rede ou na requisição:", error);
       alert("Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -280,8 +286,6 @@ export default function RegisterPage() {
                           <SelectValue placeholder="Selecione sua experiência" />
                         </SelectTrigger>
                         <SelectContent>
-                          {/* O que mudou: alteramos os `value`s para serem números inteiros */}
-                          <SelectItem value="0">Menos de 1 ano</SelectItem>
                           <SelectItem value="1">1 a 3 anos</SelectItem>
                           <SelectItem value="3">3 a 5 anos</SelectItem>
                           <SelectItem value="5">5 a 10 anos</SelectItem>
@@ -394,11 +398,22 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Submit Button */}
-                  <div className="pt-6">
-                    <Button type="submit" className="w-full" size="lg">
+                  <div className="pt-6 flex flex-col justify-center" >
+                    <Button
+                      type="submit"
+                      style={{
+                        backgroundColor: "#15803d",
+                        color: "white",
+                        padding: "0.75rem",
+                        fontSize: "1rem",
+                        fontWeight: "600",
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                        opacity: isSubmitting ? 0.7 : 1,
+                      }}
+                      disabled={isSubmitting}
+                    >
                       <CheckCircle className="mr-2 h-5 w-5" />
-                      Finalizar Cadastro
+                      {isSubmitting ? "Cadastrando..." : "Finalizar Cadastro"}
                     </Button>
                     <p className="text-xs text-muted-foreground text-center mt-3">
                       Ao se cadastrar, você concorda com nossos{" "}
