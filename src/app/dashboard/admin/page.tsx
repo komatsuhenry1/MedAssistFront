@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import Image from "next/image"
 import { toast } from "sonner"
 
 interface NurseInfo {
@@ -35,6 +36,7 @@ interface Document {
   name: string
   type: string
   download_url: string
+  image_id: string
 }
 
 interface DocumentsResponse {
@@ -83,6 +85,7 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error("Erro ao carregar dados do dashboard:", error)
+      toast.error("Erro ao carregar dados do dashboard. Tente novamente.")
     } finally {
       setLoading(false)
     }
@@ -109,6 +112,7 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error("Erro ao carregar documentos do enfermeiro:", error)
+      toast.error("Erro ao carregar documentos do enfermeiro. Tente novamente.")
     } finally {
       setDocumentsLoading(false)
     }
@@ -131,12 +135,13 @@ export default function AdminDashboard() {
         await fetchDashboardData()
         setIsDocumentsModalOpen(false)
         toast.success("Enfermeiro aprovado com sucesso!")
+        console.log("Enfermeiro aprovado com sucesso!")
       } else {
         toast.error("Erro ao aprovar enfermeiro: " + result.message)
       }
     } catch (error) {
       console.error("Erro ao aprovar enfermeiro:", error)
-      toast.error("Erro ao aprovar enfermeiro. Tente novamente.")
+      toast.error("Erro ao aprovar enfermeiro:" + error)
     } finally {
       setApprovalLoading(false)
     }
@@ -177,7 +182,7 @@ export default function AdminDashboard() {
 
   const handleRejectWithReason = () => {
     if (!rejectionReason) {
-      alert("Por favor, selecione um motivo para a rejeição.")
+      console.error("Por favor, selecione um motivo para a rejeição.")
       return
     }
     rejectNurse(currentNurseId, rejectionReason)
@@ -193,6 +198,8 @@ export default function AdminDashboard() {
     { id: 3, action: "Consulta agendada", user: "Pedro Lima", time: "1h atrás" },
     { id: 4, action: "Documento enviado", user: "Maria Santos", time: "2h atrás" },
   ])
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
   if (loading) {
     return (
@@ -335,45 +342,60 @@ export default function AdminDashboard() {
                                     {documentsLoading ? "Carregando..." : "Ver Documentos"}
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent style={{ maxWidth: "600px" }}>
+                                <DialogContent style={{ maxWidth: "800px" }}>
                                   <DialogHeader>
                                     <DialogTitle>Documentos do Enfermeiro</DialogTitle>
                                     <DialogDescription>
                                       Revise os documentos enviados por {currentNurseName} (ID: {currentNurseId})
                                     </DialogDescription>
                                   </DialogHeader>
-                                  <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+                                  <div style={{ maxHeight: "500px", overflowY: "auto" }}>
                                     {selectedNurseDocuments.length > 0 ? (
                                       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                                        {selectedNurseDocuments.map((doc, index) => (
-                                          <Card key={index}>
-                                            <CardContent style={{ padding: "1rem" }}>
-                                              <div
-                                                style={{
-                                                  display: "flex",
-                                                  justifyContent: "space-between",
-                                                  alignItems: "center",
-                                                }}
-                                              >
-                                                <div>
-                                                  <h4 style={{ fontWeight: "600", marginBottom: "0.25rem" }}>
-                                                    {doc.name}
-                                                  </h4>
-                                                  <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-                                                    Tipo: {doc.type}
-                                                  </p>
+                                        {selectedNurseDocuments.map((doc, index) => {
+                                          const imageUrl = doc.image_id
+                                            ? `${API_BASE_URL}/user/file/${doc.image_id}`
+                                            : "/placeholder-document.png"
+
+                                          return (
+                                            <Card key={index}>
+                                              <CardContent style={{ padding: "1rem" }}>
+                                                <div style={{ display: "flex", gap: "1rem", alignItems: "center"}}>
+                                                  <div style={{ flexShrink: 0 }}>
+                                                    <Image
+                                                      src={imageUrl || "/placeholder.svg"}
+                                                      alt={doc.name}
+                                                      width={500}
+                                                      height={160}
+                                                      style={{
+                                                        borderRadius: "8px",
+                                                        objectFit: "cover",
+                                                        border: "1px solid #e5e7eb",
+                                                      }}
+                                                    />
+                                                  </div>
+                                                  <div style={{ flex: 1 }}>
+                                                    <div style={{ marginBottom: "1rem" }}>
+                                                      <h4 style={{ fontWeight: "600", marginBottom: "0.25rem"}}>
+                                                        {doc.name}
+                                                      </h4>
+                                                      <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+                                                        Tipo: {doc.type}
+                                                      </p>
+                                                    </div>
+                                                    <Button
+                                                      size="sm"
+                                                      onClick={() => window.open(doc.download_url, "_blank")}
+                                                      style={{ backgroundColor: "#15803d", color: "white" }}
+                                                    >
+                                                      Download
+                                                    </Button>
+                                                  </div>
                                                 </div>
-                                                <Button
-                                                  size="sm"
-                                                  onClick={() => window.open(doc.download_url, "_blank")}
-                                                  style={{ backgroundColor: "#15803d", color: "white" }}
-                                                >
-                                                  Download
-                                                </Button>
-                                              </div>
-                                            </CardContent>
-                                          </Card>
-                                        ))}
+                                              </CardContent>
+                                            </Card>
+                                          )
+                                        })}
                                       </div>
                                     ) : (
                                       <p>Nenhum documento encontrado.</p>
