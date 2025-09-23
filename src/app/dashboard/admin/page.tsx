@@ -15,7 +15,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import Image from "next/image"
 import { toast } from "sonner"
 
@@ -45,7 +57,7 @@ interface DocumentsResponse {
   success: boolean
 }
 
-export default function AdminDashboard() {
+const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [selectedNurseDocuments, setSelectedNurseDocuments] = useState<Document[]>([])
   const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false)
@@ -54,8 +66,11 @@ export default function AdminDashboard() {
   const [approvalLoading, setApprovalLoading] = useState(false)
   const [currentNurseId, setCurrentNurseId] = useState<string>("")
   const [currentNurseName, setCurrentNurseName] = useState<string>("")
-  const [showRejectionSelect, setShowRejectionSelect] = useState(false)
+
+  const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
+  const [rejectionDetails, setRejectionDetails] = useState("")
+  const [rejectionLoading, setRejectionLoading] = useState(false)
 
   const rejectionReasons = [
     "Documentos incompletos",
@@ -118,10 +133,61 @@ export default function AdminDashboard() {
     }
   }
 
+  const rejectNurse = async (nurseId: string, description: string, details?: string) => {
+    setRejectionLoading(true)
+    try {
+      const token = localStorage.getItem("token")
+      const fullDescription = details ? `${description} - ${details}` : description
+
+      const response = await fetch(`http://localhost:8081/api/v1/admin/reject/${nurseId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          description: fullDescription,
+        }),
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        await fetchDashboardData()
+        setIsDocumentsModalOpen(false)
+        setIsRejectionModalOpen(false)
+        setRejectionReason("")
+        setRejectionDetails("")
+        toast.success("Enfermeiro rejeitado com sucesso! Email enviado para enfermeiro com nova solicitação de cadastro.")
+      } else {
+        toast.error("Erro ao rejeitar enfermeiro: " + result.message)
+      }
+    } catch (error) {
+      console.error("Erro ao rejeitar enfermeiro:", error)
+      toast.error("Erro ao rejeitar enfermeiro. Tente novamente.")
+    } finally {
+      setRejectionLoading(false)
+    }
+  }
+
+  const handleRejectClick = (nurseId: string, nurseName: string) => {
+    setCurrentNurseId(nurseId)
+    setCurrentNurseName(nurseName)
+    setIsRejectionModalOpen(true)
+  }
+
+  const handleConfirmRejection = () => {
+    if (!rejectionReason) {
+      toast.error("Por favor, selecione um motivo para a rejeição.")
+      return
+    }
+    rejectNurse(currentNurseId, rejectionReason, rejectionDetails)
+  }
+
   const approveNurse = async (nurseId: string) => {
     setApprovalLoading(true)
     try {
       const token = localStorage.getItem("token")
+
       const response = await fetch(`http://localhost:8081/api/v1/admin/approve/${nurseId}`, {
         method: "PATCH",
         headers: {
@@ -132,60 +198,24 @@ export default function AdminDashboard() {
       const result = await response.json()
 
       if (result.success) {
-        await fetchDashboardData()
+        setDashboardData((prevData) => ({
+          ...prevData!,
+          pendent_approvations: prevData!.pendent_approvations - 1,
+          nurses_ids_pendent_approvations: prevData!.nurses_ids_pendent_approvations.filter(
+            (nurse) => nurse.id !== nurseId,
+          ),
+        }))
         setIsDocumentsModalOpen(false)
         toast.success("Enfermeiro aprovado com sucesso!")
-        console.log("Enfermeiro aprovado com sucesso!")
       } else {
         toast.error("Erro ao aprovar enfermeiro: " + result.message)
       }
     } catch (error) {
       console.error("Erro ao aprovar enfermeiro:", error)
-      toast.error("Erro ao aprovar enfermeiro:" + error)
+      toast.error("Erro ao aprovar enfermeiro. Tente novamente.")
     } finally {
       setApprovalLoading(false)
     }
-  }
-
-  const rejectNurse = async (nurseId: string, description: string) => {
-    setApprovalLoading(true)
-    try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`http://localhost:8081/api/v1/admin/reject/${nurseId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          description: description,
-        }),
-      })
-      const result = await response.json()
-
-      if (result.success) {
-        await fetchDashboardData()
-        setIsDocumentsModalOpen(false)
-        setShowRejectionSelect(false)
-        setRejectionReason("")
-        toast.success("Enfermeiro rejeitado com sucesso!")
-      } else {
-        toast.error("Erro ao rejeitar enfermeiro: " + result.message)
-      }
-    } catch (error) {
-      console.error("Erro ao rejeitar enfermeiro:", error)
-      toast.error("Erro ao rejeitar enfermeiro. Tente novamente.")
-    } finally {
-      setApprovalLoading(false)
-    }
-  }
-
-  const handleRejectWithReason = () => {
-    if (!rejectionReason) {
-      console.error("Por favor, selecione um motivo para a rejeição.")
-      return
-    }
-    rejectNurse(currentNurseId, rejectionReason)
   }
 
   useEffect(() => {
@@ -360,7 +390,7 @@ export default function AdminDashboard() {
                                           return (
                                             <Card key={index}>
                                               <CardContent style={{ padding: "1rem" }}>
-                                                <div style={{ display: "flex", gap: "1rem", alignItems: "center"}}>
+                                                <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                                                   <div style={{ flexShrink: 0 }}>
                                                     <Image
                                                       src={imageUrl || "/placeholder.svg"}
@@ -376,7 +406,7 @@ export default function AdminDashboard() {
                                                   </div>
                                                   <div style={{ flex: 1 }}>
                                                     <div style={{ marginBottom: "1rem" }}>
-                                                      <h4 style={{ fontWeight: "600", marginBottom: "0.25rem"}}>
+                                                      <h4 style={{ fontWeight: "600", marginBottom: "0.25rem" }}>
                                                         {doc.name}
                                                       </h4>
                                                       <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>
@@ -405,56 +435,18 @@ export default function AdminDashboard() {
                                     <Button
                                       style={{ backgroundColor: "#15803d", color: "white", flex: 1 }}
                                       onClick={() => approveNurse(currentNurseId)}
-                                      disabled={approvalLoading}
+                                      disabled={approvalLoading || rejectionLoading}
                                     >
                                       {approvalLoading ? "Aprovando..." : "Aprovar Enfermeiro"}
                                     </Button>
-                                    {!showRejectionSelect ? (
-                                      <Button
-                                        variant="outline"
-                                        style={{ color: "#dc2626", borderColor: "#dc2626", flex: 1 }}
-                                        onClick={() => setShowRejectionSelect(true)}
-                                        disabled={approvalLoading}
-                                      >
-                                        Rejeitar
-                                      </Button>
-                                    ) : (
-                                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                                        <Select value={rejectionReason} onValueChange={setRejectionReason}>
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Selecione o motivo da rejeição" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {rejectionReasons.map((reason) => (
-                                              <SelectItem key={reason} value={reason}>
-                                                {reason}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                        <div style={{ display: "flex", gap: "0.5rem" }}>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                              setShowRejectionSelect(false)
-                                              setRejectionReason("")
-                                            }}
-                                            style={{ flex: 1 }}
-                                          >
-                                            Cancelar
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            onClick={handleRejectWithReason}
-                                            disabled={approvalLoading || !rejectionReason}
-                                            style={{ backgroundColor: "#dc2626", color: "white", flex: 1 }}
-                                          >
-                                            {approvalLoading ? "Rejeitando..." : "Confirmar"}
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    )}
+                                    <Button
+                                      variant="outline"
+                                      style={{ color: "#dc2626", borderColor: "#dc2626", flex: 1 }}
+                                      onClick={() => handleRejectClick(currentNurseId, currentNurseName)}
+                                      disabled={approvalLoading || rejectionLoading}
+                                    >
+                                      {rejectionLoading ? "Rejeitando..." : "Rejeitar"}
+                                    </Button>
                                   </div>
                                 </DialogContent>
                               </Dialog>
@@ -462,7 +454,7 @@ export default function AdminDashboard() {
                                 size="sm"
                                 style={{ backgroundColor: "#15803d", color: "white" }}
                                 onClick={() => approveNurse(nurse.id)}
-                                disabled={approvalLoading}
+                                disabled={approvalLoading || rejectionLoading}
                               >
                                 {approvalLoading ? "Aprovando..." : "Aprovar"}
                               </Button>
@@ -470,10 +462,10 @@ export default function AdminDashboard() {
                                 size="sm"
                                 variant="outline"
                                 style={{ color: "#dc2626", borderColor: "#dc2626" }}
-                                onClick={() => rejectNurse(nurse.id, "Rejeição rápida")}
-                                disabled={approvalLoading}
+                                onClick={() => handleRejectClick(nurse.id, nurse.name)}
+                                disabled={approvalLoading || rejectionLoading}
                               >
-                                {approvalLoading ? "Rejeitando..." : "Rejeitar"}
+                                {rejectionLoading ? "Rejeitando..." : "Rejeitar"}
                               </Button>
                             </div>
                           </TableCell>
@@ -592,6 +584,109 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </section>
+
+      <AlertDialog open={isRejectionModalOpen} onOpenChange={setIsRejectionModalOpen}>
+        <AlertDialogContent style={{ maxWidth: "500px" }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle style={{ color: "#dc2626", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ fontSize: "1.25rem" }}>⚠️</span>
+              Confirmar Rejeição
+            </AlertDialogTitle>
+            <AlertDialogDescription style={{ fontSize: "1rem", lineHeight: "1.5" }}>
+              Você está prestes a rejeitar o cadastro de <strong>{currentNurseName}</strong>.
+              <br />
+              Esta ação não pode ser desfeita. Por favor, selecione o motivo da rejeição.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div style={{ padding: "1rem 0", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div>
+              <Label
+                htmlFor="rejection-reason"
+                style={{ fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem", display: "block" }}
+              >
+                Motivo da Rejeição *
+              </Label>
+              <Select value={rejectionReason} onValueChange={setRejectionReason}>
+                <SelectTrigger id="rejection-reason">
+                  <SelectValue placeholder="Selecione o motivo da rejeição" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rejectionReasons.map((reason) => (
+                    <SelectItem key={reason} value={reason}>
+                      {reason}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label
+                htmlFor="rejection-details"
+                style={{ fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem", display: "block" }}
+              >
+                Detalhes Adicionais (Opcional)
+              </Label>
+              <Textarea
+                id="rejection-details"
+                placeholder="Forneça mais detalhes sobre o motivo da rejeição..."
+                value={rejectionDetails}
+                onChange={(e) => setRejectionDetails(e.target.value)}
+                style={{ minHeight: "80px", resize: "vertical" }}
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter style={{ gap: "0.5rem" }}>
+            <AlertDialogCancel
+              onClick={() => {
+                setRejectionReason("")
+                setRejectionDetails("")
+              }}
+              disabled={rejectionLoading}
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRejection}
+              disabled={rejectionLoading || !rejectionReason}
+              style={{
+                backgroundColor: "#dc2626",
+                color: "white",
+                opacity: rejectionLoading || !rejectionReason ? 0.5 : 1,
+              }}
+            >
+              {rejectionLoading ? (
+                <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      border: "2px solid transparent",
+                      borderTop: "2px solid white",
+                      borderRadius: "50%",
+                      animation: "spin 1s linear infinite",
+                    }}
+                  ></span>
+                  Rejeitando...
+                </span>
+              ) : (
+                "Confirmar Rejeição"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }
+
+export default AdminDashboard
