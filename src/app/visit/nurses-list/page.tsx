@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
+import Image from "next/image"
 
 interface Nurse {
   id: string
@@ -23,7 +24,7 @@ interface Nurse {
 }
 
 interface ApiResponse {
-  data: Nurse[]
+  data: Nurse[] | null // Permitimos que a API possa retornar null
   message: string
   success: boolean
 }
@@ -41,13 +42,12 @@ export default function PatientDashboard() {
 
   useEffect(() => {
     const fetchNurses = async () => {
-
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-      console.log("URL da API:", API_BASE_URL);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+      console.log("URL da API:", API_BASE_URL)
 
       try {
         setLoading(true)
-        const allNursesUrl = `${API_BASE_URL}/user/all_nurses`;
+        const allNursesUrl = `${API_BASE_URL}/user/all_nurses`
         const token = localStorage.getItem("token")
 
         const res = await fetch(allNursesUrl, {
@@ -57,7 +57,7 @@ export default function PatientDashboard() {
             Authorization: `Bearer ${token}`,
           },
         })
-  
+
         if (!res.ok) {
           throw new Error("Falha ao carregar enfermeiros")
         }
@@ -65,7 +65,8 @@ export default function PatientDashboard() {
         const data: ApiResponse = await res.json()
 
         if (data.success) {
-          setNurses(data.data)  
+          // MUDANÇA: Adicionamos `|| []` para garantir que `nurses` seja sempre um array.
+          setNurses(data.data || [])
         } else {
           throw new Error(data.message || "Erro ao carregar dados")
         }
@@ -80,6 +81,7 @@ export default function PatientDashboard() {
     fetchNurses()
   }, [])
 
+  // Com a correção acima, esta linha agora é segura e nunca vai falhar.
   const filteredNurses = nurses.filter((nurse) => {
     const matchesSearch =
       nurse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -100,8 +102,8 @@ export default function PatientDashboard() {
     return matchesSearch && matchesSpecialization && matchesShift && matchesAvailability && matchesPrice
   })
 
-  const uniqueSpecializations = Array.from(new Set(nurses.map((nurse) => nurse.specialization))) // Cria um novo array contendo apenas as especializações de todos os enfermeiros. Ex: ["pediatria", "pediatira", "31231"].
-  const uniqueShifts = Array.from(new Set(nurses.map((nurse) => nurse.shift))) // novo array com todos os shifts
+  const uniqueSpecializations = Array.from(new Set(nurses.map((nurse) => nurse.specialization)))
+  const uniqueShifts = Array.from(new Set(nurses.map((nurse) => nurse.shift)))
 
   const clearFilters = () => {
     setSearchTerm("")
@@ -110,6 +112,8 @@ export default function PatientDashboard() {
     setAvailabilityFilter("")
     setPriceRange("")
   }
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
   if (loading) {
     return (
@@ -156,7 +160,6 @@ export default function PatientDashboard() {
     <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
       <Header />
 
-      {/* Hero Section */}
       <section
         style={{
           background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
@@ -173,7 +176,6 @@ export default function PatientDashboard() {
       </section>
 
       <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem 1rem" }}>
-        {/* Filters Section */}
         <Card style={{ marginBottom: "2rem" }}>
           <CardHeader>
             <CardTitle style={{ color: "#15803d" }}>Filtros de Busca</CardTitle>
@@ -247,102 +249,107 @@ export default function PatientDashboard() {
           </CardContent>
         </Card>
 
-        {/* Results Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
           <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
             {filteredNurses.length} Enfermeiros Encontrados
           </h2>
         </div>
 
-        {/* Nurses Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "1.5rem" }}>
-          {filteredNurses.map((nurse) => (
-            <Card
-              key={nurse.id}
-              style={{ transition: "transform 0.2s", cursor: "pointer" }}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-            >
-              <CardContent style={{ padding: "1.5rem" }}>
-                <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-                  <img
-                    src={nurse.image || "/placeholder.svg?height=80&width=80&query=nurse professional"}
-                    alt={nurse.name}
-                    style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "start",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      <h3 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#1f2937" }}>{nurse.name}</h3>
-                      <Badge
-                        variant={nurse.available ? "default" : "secondary"}
-                        style={{ backgroundColor: nurse.available ? "#15803d" : "#6b7280" }}
+          {filteredNurses.map((nurse) => {
+            const imageUrl = nurse.image
+              ? `${API_BASE_URL}/user/file/${nurse.image}`
+              : "/placeholder-avatar.png"
+
+            return (
+              <Card
+                key={nurse.id}
+                style={{ transition: "transform 0.2s", cursor: "pointer" }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+              >
+                <CardContent style={{ padding: "1.5rem" }}>
+                  <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+                    <Image
+                      src={imageUrl}
+                      alt={nurse.name}
+                      width={80}
+                      height={80}
+                      style={{ borderRadius: "50%", objectFit: "cover" }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "start",
+                          marginBottom: "0.5rem",
+                        }}
                       >
-                        {nurse.available ? "Disponível" : "Indisponível"}
-                      </Badge>
+                        <h3 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#1f2937" }}>{nurse.name}</h3>
+                        <Badge
+                          variant={nurse.available ? "default" : "secondary"}
+                          style={{ backgroundColor: nurse.available ? "#15803d" : "#6b7280" }}
+                        >
+                          {nurse.available ? "Disponível" : "Indisponível"}
+                        </Badge>
+                      </div>
+                      <p style={{ color: "#15803d", fontWeight: "600", marginBottom: "0.25rem" }}>
+                        {nurse.specialization.charAt(0).toUpperCase() + nurse.specialization.slice(1)}
+                      </p>
+                      <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>{nurse.department}</p>
                     </div>
-                    <p style={{ color: "#15803d", fontWeight: "600", marginBottom: "0.25rem" }}>
-                      {nurse.specialization.charAt(0).toUpperCase() + nurse.specialization.slice(1)}
-                    </p>
-                    <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>{nurse.department}</p>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "0.5rem",
-                    marginBottom: "1rem",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  <div>
-                    <span style={{ color: "#6b7280" }}>Experiência:</span>
-                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.years_experience} anos</span>
-                  </div>
-                  <div>
-                    <span style={{ color: "#6b7280" }}>Turno:</span>
-                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>
-                      {nurse.shift.charAt(0).toUpperCase() + nurse.shift.slice(1)}
-                    </span>
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <span style={{ color: "#6b7280" }}>Localização:</span>
-                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.location}</span>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <span style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
-                      {nurse.price > 0 ? `R$ ${nurse.price}` : "A combinar"}
-                    </span>
-                    {nurse.price > 0 && <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>/hora</span>}
                   </div>
 
-                  <Link href={`/visit/nurses-list/1`}>
-                  {/* <Link href={`/visit/nurses-list/${nurse.id}`}> */}
-                    <Button
-                      style={{
-                        backgroundColor: nurse.available ? "#15803d" : "#6b7280",
-                        color: "white",
-                      }}
-                      disabled={!nurse.available}
-                    >
-                      {nurse.available ? "Ver Perfil" : "Indisponível"}
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "0.5rem",
+                      marginBottom: "1rem",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    <div>
+                      <span style={{ color: "#6b7280" }}>Experiência:</span>
+                      <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.years_experience} anos</span>
+                    </div>
+                    <div>
+                      <span style={{ color: "#6b7280" }}>Turno:</span>
+                      <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>
+                        {nurse.shift.charAt(0).toUpperCase() + nurse.shift.slice(1)}
+                      </span>
+                    </div>
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <span style={{ color: "#6b7280" }}>Localização:</span>
+                      <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.location}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <span style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
+                        {nurse.price > 0 ? `R$ ${nurse.price}` : "A combinar"}
+                      </span>
+                      {nurse.price > 0 && <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>/hora</span>}
+                    </div>
+
+                    <Link href={`/visit/nurses-list/${nurse.id}`}>
+                      <Button
+                        style={{
+                          backgroundColor: nurse.available ? "#15803d" : "#6b7280",
+                          color: "white",
+                        }}
+                        disabled={!nurse.available}
+                      >
+                        {nurse.available ? "Ver Perfil" : "Indisponível"}
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
 
         {filteredNurses.length === 0 && !loading && (
@@ -355,8 +362,12 @@ export default function PatientDashboard() {
 
       <style jsx>{`
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </div>
