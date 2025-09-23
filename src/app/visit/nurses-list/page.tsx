@@ -268,15 +268,35 @@ export default function PatientDashboard() {
                 onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
                 onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
               >
-                <CardContent style={{ padding: "1.5rem" }}>
+                <CardContent
+                  style={{
+                    padding: "1.5rem",
+                    display: "flex", // MUDANÇA: Ativa o Flexbox
+                    flexDirection: "column", // MUDANÇA: Organiza os itens em coluna
+                    justifyContent: "space-between", // MUDANÇA: Distribui o espaço verticalmente
+                    height: "100%", // MUDANÇA: Faz o conteúdo ocupar toda a altura do card
+                  }}
+                >
                   <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-                    <Image
-                      src={imageUrl}
-                      alt={nurse.name}
-                      width={80}
-                      height={80}
-                      style={{ borderRadius: "50%", objectFit: "cover" }}
-                    />
+                    {/* INÍCIO DA ALTERAÇÃO: Adicionado um 'div' como contêiner para a imagem */}
+                    <div
+                      style={{
+                        position: "relative",
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        flexShrink: 0, // Impede que o círculo seja esmagado em telas menores
+                      }}
+                    >
+                      <Image
+                        src={imageUrl}
+                        alt={nurse.name}
+                        fill
+                        style={{ objectFit: "cover" }}
+                      />
+                    </div>
+                    {/* FIM DA ALTERAÇÃO */}
                     <div style={{ flex: 1 }}>
                       <div
                         style={{
@@ -286,7 +306,9 @@ export default function PatientDashboard() {
                           marginBottom: "0.5rem",
                         }}
                       >
-                        <h3 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#1f2937" }}>{nurse.name}</h3>
+                        <h3 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#1f2937" }}>
+                          {nurse.name}
+                        </h3>
                         <Badge
                           variant={nurse.available ? "default" : "secondary"}
                           style={{ backgroundColor: nurse.available ? "#15803d" : "#6b7280" }}
@@ -349,6 +371,7 @@ export default function PatientDashboard() {
                 </CardContent>
               </Card>
             )
+
           })}
         </div>
 
