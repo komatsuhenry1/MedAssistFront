@@ -31,6 +31,7 @@ export default function RegisterPage() {
     general_register: null as File | null,
     residence_comprovant: null as File | null,
     license_document: null as File | null,
+    face_image: null as File | null,
   })
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,7 +69,7 @@ export default function RegisterPage() {
       });
 
       if (response.ok) {
-        toast.success("Cadastro realizado com sucesso!");
+        toast.success("Cadastro solicitado com sucesso!");
       } else {
         const errorData = await response.json();
         console.log("errorData: ", errorData);
@@ -391,6 +392,28 @@ export default function RegisterPage() {
                           <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                           <p className="text-sm font-medium">
                             {formData.license_document ? formData.license_document.name : "Clique para enviar COREN"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">PDF, JPG, PNG até 5MB</p>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Face image*/}
+                    <div className="space-y-2">
+                      <Label htmlFor="face_image">Foto de Perfil *</Label>
+                      <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                        <input
+                          type="file"
+                          id="face_image"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => handleFileChange("face_image", e.target.files?.[0] || null)}
+                          className="hidden"
+                          required
+                        />
+                        <label htmlFor="face_image" className="cursor-pointer">
+                          <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm font-medium">
+                            {formData.face_image ? formData.face_image.name : "Clique para enviar foto de perfil"}
                           </p>
                           <p className="text-xs text-muted-foreground">PDF, JPG, PNG até 5MB</p>
                         </label>

@@ -65,7 +65,7 @@ export default function PatientDashboard() {
         const data: ApiResponse = await res.json()
 
         if (data.success) {
-          setNurses(data.data)
+          setNurses(data.data)  
         } else {
           throw new Error(data.message || "Erro ao carregar dados")
         }
@@ -100,8 +100,8 @@ export default function PatientDashboard() {
     return matchesSearch && matchesSpecialization && matchesShift && matchesAvailability && matchesPrice
   })
 
-  const uniqueSpecializations = Array.from(new Set(nurses.map((nurse) => nurse.specialization)))
-  const uniqueShifts = Array.from(new Set(nurses.map((nurse) => nurse.shift)))
+  const uniqueSpecializations = Array.from(new Set(nurses.map((nurse) => nurse.specialization))) // Cria um novo array contendo apenas as especializações de todos os enfermeiros. Ex: ["pediatria", "pediatira", "31231"].
+  const uniqueShifts = Array.from(new Set(nurses.map((nurse) => nurse.shift))) // novo array com todos os shifts
 
   const clearFilters = () => {
     setSearchTerm("")
@@ -327,7 +327,8 @@ export default function PatientDashboard() {
                     {nurse.price > 0 && <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>/hora</span>}
                   </div>
 
-                  <Link href={`/patient/nurse/${nurse.id}`}>
+                  <Link href={`/visit/nurses-list/1`}>
+                  {/* <Link href={`/visit/nurses-list/${nurse.id}`}> */}
                     <Button
                       style={{
                         backgroundColor: nurse.available ? "#15803d" : "#6b7280",
