@@ -384,7 +384,7 @@ const AdminDashboard = () => {
                                       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                                         {selectedNurseDocuments.map((doc, index) => {
                                           const imageUrl = doc.image_id
-                                            ? `${API_BASE_URL}/user/file/${doc.image_id}`
+                                            ? `${API_BASE_URL}/admin/file/${doc.image_id}`
                                             : "/placeholder-document.png"
 
                                           return (
@@ -409,9 +409,6 @@ const AdminDashboard = () => {
                                                       <h4 style={{ fontWeight: "600", marginBottom: "0.25rem" }}>
                                                         {doc.name}
                                                       </h4>
-                                                      <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-                                                        Tipo: {doc.type}
-                                                      </p>
                                                     </div>
                                                     <Button
                                                       size="sm"
@@ -444,7 +441,7 @@ const AdminDashboard = () => {
                                       style={{ color: "#dc2626", borderColor: "#dc2626", flex: 1 }}
                                       onClick={() => handleRejectClick(currentNurseId, currentNurseName)}
                                       disabled={approvalLoading || rejectionLoading}
-                                    >
+                                    >   
                                       {rejectionLoading ? "Rejeitando..." : "Rejeitar"}
                                     </Button>
                                   </div>
@@ -589,7 +586,6 @@ const AdminDashboard = () => {
         <AlertDialogContent style={{ maxWidth: "500px" }}>
           <AlertDialogHeader>
             <AlertDialogTitle style={{ color: "#dc2626", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "1.25rem" }}>⚠️</span>
               Confirmar Rejeição
             </AlertDialogTitle>
             <AlertDialogDescription style={{ fontSize: "1rem", lineHeight: "1.5" }}>
