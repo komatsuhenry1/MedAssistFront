@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { useState } from "react"
 
 import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
@@ -11,26 +12,73 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
-import { useState } from "react"
+import { toast } from "sonner"
+
+interface ContactFormData {
+    name: string
+    email: string
+    phone: string
+    subject: string
+    message: string
+}
+
+interface FormStatus {
+    message: string
+    type: "success" | "error" | ""
+}
 
 export default function Contato() {
-    const [formData, setFormData] = useState({
-        nome: "",
+    const [formData, setFormData] = useState<ContactFormData>({
+        name: "",
         email: "",
-        telefone: "",
-        assunto: "",
-        mensagem: "",
+        phone: "",
+        subject: "",
+        message: "",
     })
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        // Aqui você implementaria o envio do formulário
-        console.log("Formulário enviado:", formData)
-        alert("Mensagem enviada com sucesso! Entraremos em contato em breve.")
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [formStatus, setFormStatus] = useState<FormStatus>({ message: "", type: "" })
+
+    const handleChange = (field: keyof ContactFormData, value: string) => {
+        setFormData((prev) => ({ ...prev, [field]: value }))
     }
 
-    const handleChange = (field: string, value: string) => {
-        setFormData((prev) => ({ ...prev, [field]: value }))
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+        setFormStatus({ message: "", type: "" })
+
+        try {
+            const contactUsUrl = `http://localhost:8081/api/v1/user/contact`
+            const response = await fetch(contactUsUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            },
+            )
+
+            if (!response.ok) {
+                toast.success("Erro ao enviar mensagem. Tente novamente.")
+                throw new Error("Ocorreu um erro ao enviar a mensagem. Tente novamente.")
+            }
+
+            toast.success("Mensagem de contato enviada com sucesso.")
+
+            setFormStatus({
+                message: "Mensagem enviada com sucesso! Entraremos em contato em breve.",
+                type: "success",
+            })
+            setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
+        } catch (error: any) {
+            setFormStatus({
+                message: error.message || "Falha na comunicação com o servidor.",
+                type: "error",
+            })
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -38,22 +86,14 @@ export default function Contato() {
             <Header />
 
             {/* Hero Section */}
-            <section
-                style={{ background: "linear-gradient(to bottom right, #15803d, #16a34a)", color: "white", padding: "4rem 0" }}
-            >
+            <section className="bg-gradient-to-br from-green-700 to-green-600 text-white py-16">
                 <div className="container mx-auto px-4 text-center">
                     <div className="max-w-4xl mx-auto">
-                        <Badge
-                            variant="secondary"
-                            className="mb-6 text-sm font-medium"
-                            style={{ backgroundColor: "white", color: "#15803d" }}
-                        >
+                        <Badge variant="secondary" className="mb-6 text-sm font-medium bg-white text-green-700">
                             Estamos Aqui para Ajudar
                         </Badge>
-                        <h1 className="text-4xl md:text-5xl font-bold mb-6 text-balance" style={{ color: "white" }}>
-                            Entre em Contato Conosco
-                        </h1>
-                        <p className="text-xl md:text-2xl mb-8 text-pretty" style={{ color: "rgba(255, 255, 255, 0.9)" }}>
+                        <h1 className="text-4xl md:text-5xl font-bold mb-6 text-balance text-white">Entre em Contato Conosco</h1>
+                        <p className="text-xl md:text-2xl mb-8 text-pretty text-white/90">
                             Tem dúvidas sobre nossos serviços? Precisa de ajuda? Nossa equipe está pronta para atendê-lo com todo o
                             cuidado e atenção que você merece.
                         </p>
@@ -67,33 +107,31 @@ export default function Contato() {
                     <div className="grid lg:grid-cols-2 gap-12">
                         {/* Contact Form */}
                         <div>
-                            <h2 className="text-3xl font-bold mb-6" style={{ color: "#1f2937" }}>
-                                Envie sua Mensagem
-                            </h2>
-                            <p className="text-lg mb-8" style={{ color: "#6b7280" }}>
+                            <h2 className="text-3xl font-bold mb-6 text-gray-800">Envie sua Mensagem</h2>
+                            <p className="text-lg mb-8 text-gray-600">
                                 Preencha o formulário abaixo e nossa equipe entrará em contato com você o mais breve possível.
                             </p>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
-                                        <Label htmlFor="nome">Nome Completo *</Label>
+                                        <Label htmlFor="name">Nome Completo *</Label>
                                         <Input
-                                            id="nome"
+                                            id="name"
                                             type="text"
-                                            value={formData.nome}
-                                            onChange={(e) => handleChange("nome", e.target.value)}
+                                            value={formData.name}
+                                            onChange={(e) => handleChange("name", e.target.value)}
                                             required
                                             className="mt-1"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="telefone">Telefone</Label>
+                                        <Label htmlFor="phone">Telefone</Label>
                                         <Input
-                                            id="telefone"
+                                            id="phone"
                                             type="tel"
-                                            value={formData.telefone}
-                                            onChange={(e) => handleChange("telefone", e.target.value)}
+                                            value={formData.phone}
+                                            onChange={(e) => handleChange("phone", e.target.value)}
                                             className="mt-1"
                                             placeholder="(11) 99999-9999"
                                         />
@@ -113,84 +151,96 @@ export default function Contato() {
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="assunto">Assunto *</Label>
-                                    <Select onValueChange={(value) => handleChange("assunto", value)} required>
+                                    <Label htmlFor="subject">Assunto *</Label>
+                                    <Select
+                                        onValueChange={(value) => handleChange("subject", value)}
+                                        required
+                                        value={formData.subject || ""}
+                                    >
                                         <SelectTrigger className="mt-1">
                                             <SelectValue placeholder="Selecione o assunto" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="informacoes">Informações sobre serviços</SelectItem>
-                                            <SelectItem value="agendamento">Agendamento de consulta</SelectItem>
-                                            <SelectItem value="suporte">Suporte técnico</SelectItem>
-                                            <SelectItem value="parceria">Parceria/Trabalhe conosco</SelectItem>
-                                            <SelectItem value="reclamacao">Reclamação</SelectItem>
-                                            <SelectItem value="outros">Outros</SelectItem>
+                                            <SelectItem value="Informações sobre serviços">Informações sobre serviços</SelectItem>
+                                            <SelectItem value="Agendamento de consulta">Agendamento de consulta</SelectItem>
+                                            <SelectItem value="Suporte técnico">Suporte técnico</SelectItem>
+                                            <SelectItem value="Parceria/Trabalhe conosco">Parceria/Trabalhe conosco</SelectItem>
+                                            <SelectItem value="Reclamação">Reclamação</SelectItem>
+                                            <SelectItem value="Outros">Outros</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="mensagem">Mensagem *</Label>
+                                    <Label htmlFor="message">Mensagem *</Label>
                                     <Textarea
-                                        id="mensagem"
-                                        value={formData.mensagem}
-                                        onChange={(e) => handleChange("mensagem", e.target.value)}
+                                        id="message"
+                                        value={formData.message}
+                                        onChange={(e) => handleChange("message", e.target.value)}
                                         required
                                         className="mt-1 min-h-32"
                                         placeholder="Descreva sua dúvida ou solicitação..."
                                     />
                                 </div>
 
-                                <Button type="submit" size="lg" className="w-full text-lg" style={{ backgroundColor: "#15803d" }}>
-                                    Enviar Mensagem
+                                {formStatus.message && (
+                                    <div
+                                        className={`p-4 rounded-lg text-center font-medium ${formStatus.type === "success"
+                                            ? "bg-green-50 text-green-800 border border-green-200"
+                                            : "bg-red-50 text-red-800 border border-red-200"
+                                            }`}
+                                    >
+                                        {formStatus.message}
+                                    </div>
+                                )}
+
+                                <Button
+                                    type="submit"
+                                    size="lg"
+                                    className="w-full text-lg bg-green-700 hover:bg-green-800"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? "Enviando..." : "Enviar Mensagem"}
                                 </Button>
                             </form>
                         </div>
 
                         {/* Contact Information */}
                         <div>
-                            <h2 className="text-3xl font-bold mb-6" style={{ color: "#1f2937" }}>
-                                Informações de Contato
-                            </h2>
+                            <h2 className="text-3xl font-bold mb-6 text-gray-800">Informações de Contato</h2>
 
                             <div className="space-y-6 mb-8">
-                                <Card>
+                                <Card className="hover:shadow-md transition-shadow">
                                     <CardContent className="p-6">
                                         <div className="flex items-start gap-4">
-                                            <div
-                                                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                                                style={{ backgroundColor: "#dcfce7" }}
-                                            >
+                                            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                                 <span className="text-xl">📞</span>
                                             </div>
                                             <div>
                                                 <h3 className="font-semibold text-lg mb-2">Telefone</h3>
-                                                <p style={{ color: "#6b7280" }}>
+                                                <p className="text-gray-600">
                                                     <strong>Central de Atendimento:</strong>
                                                     <br />
                                                     (11) 3000-0000
                                                     <br />
                                                     <strong>WhatsApp:</strong>
                                                     <br />
-                                                    (11) 99999-9999
+                                                    (11) 97885-4493
                                                 </p>
                                             </div>
                                         </div>
                                     </CardContent>
                                 </Card>
 
-                                <Card>
+                                <Card className="hover:shadow-md transition-shadow">
                                     <CardContent className="p-6">
                                         <div className="flex items-start gap-4">
-                                            <div
-                                                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                                                style={{ backgroundColor: "#dcfce7" }}
-                                            >
+                                            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                                 <span className="text-xl">✉️</span>
                                             </div>
                                             <div>
                                                 <h3 className="font-semibold text-lg mb-2">E-mail</h3>
-                                                <p style={{ color: "#6b7280" }}>
+                                                <p className="text-gray-600">
                                                     <strong>Atendimento Geral:</strong>
                                                     <br />
                                                     contato@medassist.com.br
@@ -204,18 +254,15 @@ export default function Contato() {
                                     </CardContent>
                                 </Card>
 
-                                <Card>
+                                <Card className="hover:shadow-md transition-shadow">
                                     <CardContent className="p-6">
                                         <div className="flex items-start gap-4">
-                                            <div
-                                                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                                                style={{ backgroundColor: "#dcfce7" }}
-                                            >
+                                            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                                 <span className="text-xl">📍</span>
                                             </div>
                                             <div>
                                                 <h3 className="font-semibold text-lg mb-2">Endereço</h3>
-                                                <p style={{ color: "#6b7280" }}>
+                                                <p className="text-gray-600">
                                                     Av. Paulista, 1000 - Sala 1501
                                                     <br />
                                                     Bela Vista, São Paulo - SP
@@ -227,18 +274,15 @@ export default function Contato() {
                                     </CardContent>
                                 </Card>
 
-                                <Card>
+                                <Card className="hover:shadow-md transition-shadow">
                                     <CardContent className="p-6">
                                         <div className="flex items-start gap-4">
-                                            <div
-                                                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                                                style={{ backgroundColor: "#dcfce7" }}
-                                            >
+                                            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                                 <span className="text-xl">⏰</span>
                                             </div>
                                             <div>
                                                 <h3 className="font-semibold text-lg mb-2">Horário de Atendimento</h3>
-                                                <p style={{ color: "#6b7280" }}>
+                                                <p className="text-gray-600">
                                                     <strong>Segunda a Sexta:</strong> 8h às 18h
                                                     <br />
                                                     <strong>Sábados:</strong> 8h às 14h
@@ -251,14 +295,12 @@ export default function Contato() {
                                 </Card>
                             </div>
 
-                            <div className="rounded-2xl p-6" style={{ backgroundColor: "#f0fdf4" }}>
-                                <h3 className="font-semibold text-lg mb-4" style={{ color: "#15803d" }}>
-                                    Atendimento de Emergência
-                                </h3>
-                                <p className="text-sm mb-4" style={{ color: "#6b7280" }}>
+                            <div className="rounded-2xl p-6 bg-green-50 border border-green-200">
+                                <h3 className="font-semibold text-lg mb-4 text-green-700">Atendimento de Emergência</h3>
+                                <p className="text-sm mb-4 text-gray-600">
                                     Para situações de emergência, nossa equipe está disponível 24 horas por dia, 7 dias por semana.
                                 </p>
-                                <Button size="sm" className="w-full" style={{ backgroundColor: "#15803d" }}>
+                                <Button size="sm" className="w-full bg-green-700 hover:bg-green-800">
                                     Ligar para Emergência
                                 </Button>
                             </div>
