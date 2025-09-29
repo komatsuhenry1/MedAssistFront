@@ -5,8 +5,57 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import Image from "next/image"
 
 export default function Servicos() {
+    const services = [
+        {
+            title: "Cuidados Domiciliares",
+            imageUrl: "/cuidados_domiciliares.png",
+            description: "Cuidados médicos completos no conforto do seu lar, incluindo administração de medicamentos, monitoramento de sinais vitais e acompanhamento de tratamentos.",
+            items: [
+                "Administração de medicamentos",
+                "Monitoramento de sinais vitais",
+                "Curativos e cuidados com feridas",
+                "Acompanhamento de tratamentos",
+            ],
+        },
+        {
+            title: "Cuidados Pós-Operatórios",
+            imageUrl: "/cuidados_pos_operatorios.png",
+            description: "Acompanhamento especializado durante o período de recuperação, garantindo uma reabilitação segura e eficaz após procedimentos cirúrgicos.",
+            items: [
+                "Cuidados com incisões cirúrgicas",
+                "Controle da dor pós-operatória",
+                "Fisioterapia respiratória",
+                "Orientações para recuperação",
+            ],
+        },
+        {
+            title: "Atendimento 24h",
+            imageUrl: "/atendimento_24h.png",
+            description: "Disponibilidade de enfermeiros qualificados 24 horas por dia, 7 dias por semana para emergências e cuidados contínuos.",
+            items: ["Plantões noturnos", "Atendimento de emergência", "Cuidados intensivos domiciliares", "Suporte familiar 24h"],
+        },
+        {
+            title: "Cuidados Geriátricos",
+            imageUrl: "/cuidados_geriatricos.png",
+            description: "Cuidados especializados para idosos, focando no bem-estar, independência e qualidade de vida dos pacientes da terceira idade.",
+            items: ["Cuidados com mobilidade", "Prevenção de quedas", "Estimulação cognitiva", "Cuidados com higiene pessoal"],
+        },
+        {
+            title: "Consultas Especializadas",
+            imageUrl: "/consultas_especializadas.png",
+            description: "Avaliações de saúde, orientações médicas e acompanhamento de tratamentos com enfermeiros especializados em diferentes áreas.",
+            items: ["Avaliação de saúde geral", "Orientações nutricionais", "Educação em saúde", "Acompanhamento de doenças crônicas"],
+        },
+        {
+            title: "Cuidados Paliativos",
+            imageUrl: "/cuidados_paliativos.png",
+            description: "Suporte compassivo e cuidados especializados para pacientes em situações delicadas, priorizando conforto, dignidade e qualidade de vida.",
+            items: ["Controle de sintomas", "Suporte emocional", "Cuidados de conforto", "Apoio à família"],
+        },
+    ]
     return (
         <>
             <Header />
@@ -48,150 +97,32 @@ export default function Servicos() {
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-                        <Card className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div
-                                    className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                                    style={{ backgroundColor: "#dcfce7" }}
-                                >
-                                    <span className="text-2xl">❤️</span>
+                    <div className="grid md-grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                        {services.map((service) => (
+                            <Card key={service.title} className="hover:shadow-lg transition-shadow overflow-hidden flex flex-col">
+                                <div className="relative w-full h-48">
+                                    <Image
+                                        src={service.imageUrl || "/placeholder.svg"}
+                                        alt={`Imagem ilustrativa para ${service.title}`}
+                                        fill
+                                        className="object-cover object-center" // MUDANÇA AQUI
+                                    />
                                 </div>
-                                <CardTitle>Cuidados Domiciliares</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="text-base mb-4">
-                                    Cuidados médicos completos no conforto do seu lar, incluindo administração de medicamentos,
-                                    monitoramento de sinais vitais e acompanhamento de tratamentos.
-                                </CardDescription>
-                                <ul className="text-sm space-y-2" style={{ color: "#6b7280" }}>
-                                    <li>• Administração de medicamentos</li>
-                                    <li>• Monitoramento de sinais vitais</li>
-                                    <li>• Curativos e cuidados com feridas</li>
-                                    <li>• Acompanhamento de tratamentos</li>
-                                </ul>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div
-                                    className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                                    style={{ backgroundColor: "#dcfce7" }}
-                                >
-                                    <span className="text-2xl">🛡️</span>
+                                <div className="flex flex-col flex-grow">
+                                    <CardHeader>
+                                        <CardTitle>{service.title}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex flex-col flex-grow">
+                                        <CardDescription className="text-base mb-4">{service.description}</CardDescription>
+                                        <ul className="text-sm space-y-2 mt-auto" style={{ color: "#6b7280" }}>
+                                            {service.items.map((item) => (
+                                                <li key={item}>• {item}</li>
+                                            ))}
+                                        </ul>
+                                    </CardContent>
                                 </div>
-                                <CardTitle>Cuidados Pós-Operatórios</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="text-base mb-4">
-                                    Acompanhamento especializado durante o período de recuperação, garantindo uma reabilitação segura e
-                                    eficaz após procedimentos cirúrgicos.
-                                </CardDescription>
-                                <ul className="text-sm space-y-2" style={{ color: "#6b7280" }}>
-                                    <li>• Cuidados com incisões cirúrgicas</li>
-                                    <li>• Controle da dor pós-operatória</li>
-                                    <li>• Fisioterapia respiratória</li>
-                                    <li>• Orientações para recuperação</li>
-                                </ul>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div
-                                    className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                                    style={{ backgroundColor: "#dcfce7" }}
-                                >
-                                    <span className="text-2xl">⏰</span>
-                                </div>
-                                <CardTitle>Atendimento 24h</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="text-base mb-4">
-                                    Disponibilidade de enfermeiros qualificados 24 horas por dia, 7 dias por semana para emergências e
-                                    cuidados contínuos.
-                                </CardDescription>
-                                <ul className="text-sm space-y-2" style={{ color: "#6b7280" }}>
-                                    <li>• Plantões noturnos</li>
-                                    <li>• Atendimento de emergência</li>
-                                    <li>• Cuidados intensivos domiciliares</li>
-                                    <li>• Suporte familiar 24h</li>
-                                </ul>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div
-                                    className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                                    style={{ backgroundColor: "#dcfce7" }}
-                                >
-                                    <span className="text-2xl">👥</span>
-                                </div>
-                                <CardTitle>Cuidados Geriátricos</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="text-base mb-4">
-                                    Cuidados especializados para idosos, focando no bem-estar, independência e qualidade de vida dos
-                                    pacientes da terceira idade.
-                                </CardDescription>
-                                <ul className="text-sm space-y-2" style={{ color: "#6b7280" }}>
-                                    <li>• Cuidados com mobilidade</li>
-                                    <li>• Prevenção de quedas</li>
-                                    <li>• Estimulação cognitiva</li>
-                                    <li>• Cuidados com higiene pessoal</li>
-                                </ul>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div
-                                    className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                                    style={{ backgroundColor: "#dcfce7" }}
-                                >
-                                    <span className="text-2xl">✅</span>
-                                </div>
-                                <CardTitle>Consultas Especializadas</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="text-base mb-4">
-                                    Avaliações de saúde, orientações médicas e acompanhamento de tratamentos com enfermeiros
-                                    especializados em diferentes áreas.
-                                </CardDescription>
-                                <ul className="text-sm space-y-2" style={{ color: "#6b7280" }}>
-                                    <li>• Avaliação de saúde geral</li>
-                                    <li>• Orientações nutricionais</li>
-                                    <li>• Educação em saúde</li>
-                                    <li>• Acompanhamento de doenças crônicas</li>
-                                </ul>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div
-                                    className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                                    style={{ backgroundColor: "#dcfce7" }}
-                                >
-                                    <span className="text-2xl">💚</span>
-                                </div>
-                                <CardTitle>Cuidados Paliativos</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="text-base mb-4">
-                                    Suporte compassivo e cuidados especializados para pacientes em situações delicadas, priorizando
-                                    conforto, dignidade e qualidade de vida.
-                                </CardDescription>
-                                <ul className="text-sm space-y-2" style={{ color: "#6b7280" }}>
-                                    <li>• Controle de sintomas</li>
-                                    <li>• Suporte emocional</li>
-                                    <li>• Cuidados de conforto</li>
-                                    <li>• Apoio à família</li>
-                                </ul>
-                            </CardContent>
-                        </Card>
+                            </Card>
+                        ))}
                     </div>
                 </div>
             </section>
