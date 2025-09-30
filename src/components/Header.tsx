@@ -41,6 +41,12 @@ export function Header() {
       <Link href="/contato" className="text-sm font-medium hover:text-primary transition-colors">
         Contato
       </Link>
+      <Link href="/visit/nurses-list" className="text-sm font-medium hover:text-primary transition-colors">
+        Enfermeiros
+      </Link>
+      <Link href="/visit/all-visits-patient" className="text-sm font-medium hover:text-primary transition-colors">
+        Visitas
+      </Link>
     </>
   )
 
