@@ -25,7 +25,7 @@ export default function About() {
               Nossa História
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 text-balance" style={{ color: "white" }}>
-              Sobre o MedAssist
+              Sobre o Vita
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-pretty" style={{ color: "rgba(255, 255, 255, 0.9)" }}>
               Transformando o cuidado de saúde através da tecnologia, conectando profissionais qualificados a pacientes
@@ -217,7 +217,7 @@ export default function About() {
                     O Início (2023)
                   </h3>
                   <p className="text-lg" style={{ color: "#6b7280" }}>
-                    O MedAssist nasceu da necessidade observada de conectar profissionais de enfermagem qualificados com
+                    O Vita nasceu da necessidade observada de conectar profissionais de enfermagem qualificados com
                     pacientes que precisavam de cuidados domiciliares. Identificamos uma lacuna no mercado onde tanto
                     enfermeiros quanto pacientes enfrentavam dificuldades para se conectar de forma segura e eficiente.
                   </p>
@@ -259,7 +259,7 @@ export default function About() {
                     Presente
                   </h3>
                   <p className="text-lg" style={{ color: "#6b7280" }}>
-                    Hoje, o MedAssist conecta centenas de enfermeiros qualificados a milhares de pacientes em todo o
+                    Hoje, o Vita conecta centenas de enfermeiros qualificados a milhares de pacientes em todo o
                     Brasil. Continuamos expandindo nossos serviços e melhorando nossa plataforma para oferecer a melhor
                     experiência possível para todos os usuários.
                   </p>
@@ -375,7 +375,7 @@ export default function About() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h3 className="font-bold text-lg mb-4">MedAssist</h3>
+              <h3 className="font-bold text-lg mb-4">Vita</h3>
               <p className="text-sm" style={{ color: "#6b7280" }}>
                 Conectando cuidado e confiança através de uma plataforma segura e profissional de serviços de
                 enfermagem.
@@ -462,7 +462,7 @@ export default function About() {
           </div>
 
           <div className="mt-8 pt-8 text-center text-sm" style={{ borderTop: "1px solid #d1d5db", color: "#6b7280" }}>
-            <p>&copy; 2025 MedAssist. Todos os direitos reservados.</p>
+            <p>&copy; 2025 Vita. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

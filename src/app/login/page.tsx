@@ -234,7 +234,7 @@ export default function LoginPage() {
               color: "#1f2937",
             }}
           >
-            Por que escolher o MedAssist?
+            Por que escolher o Vita?
           </h2>
           <div
             style={{
@@ -278,7 +278,7 @@ export default function LoginPage() {
         }}
       >
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <p style={{ marginBottom: "1rem" }}>© 2024 MedAssist. Todos os direitos reservados.</p>
+          <p style={{ marginBottom: "1rem" }}>© 2024 Vita. Todos os direitos reservados.</p>
           <div style={{ display: "flex", justifyContent: "center", gap: "2rem", flexWrap: "wrap" }}>
             <Link href="/terms" style={{ color: "#9ca3af", textDecoration: "none" }}>
               Termos de Uso

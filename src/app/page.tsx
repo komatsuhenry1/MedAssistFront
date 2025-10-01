@@ -183,7 +183,7 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6 text-balance" style={{ color: "#1f2937" }}>
-                Por que Escolher o MedAssist?
+                Por que Escolher o Vita?
               </h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
@@ -321,7 +321,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h3 className="font-bold text-lg mb-4">MedAssist</h3>
+              <h3 className="font-bold text-lg mb-4">Vita</h3>
               <p className="text-sm" style={{ color: "#6b7280" }}>
                 Conectando cuidado e confiança através de uma plataforma segura e profissional de serviços de
                 enfermagem.
@@ -408,7 +408,7 @@ export default function Home() {
           </div>
 
           <div className="mt-8 pt-8 text-center text-sm" style={{ borderTop: "1px solid #d1d5db", color: "#6b7280" }}>
-            <p>&copy; 2024 MedAssist. Todos os direitos reservados.</p>
+            <p>&copy; 2024 Vita. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

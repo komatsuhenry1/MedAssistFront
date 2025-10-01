@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "MedAssist - Conectando Cuidado e Confiança",
+  title: "Vita - Conectando Cuidado e Confiança",
   description:
     "Plataforma profissional que conecta enfermeiros qualificados a pacientes, oferecendo cuidados de saúde personalizados e confiáveis.",
 }

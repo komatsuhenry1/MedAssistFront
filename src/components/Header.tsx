@@ -1,30 +1,65 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, LogOut, User, UserPlus } from "lucide-react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Menu, LogOut, User, UserPlus, Bell } from "lucide-react"
+
+interface UserData {
+  name: string
+  email: string
+  role: string
+}
 
 export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [notificationsCount, setNotificationsCount] = useState(3)
 
   useEffect(() => {
     const token = localStorage.getItem("token")
-    if (token) setIsAuthenticated(true)
+    if (token) {
+      setIsAuthenticated(true)
+
+      const storedUser = localStorage.getItem("user")
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser)
+          setUserData(user)
+        } catch (error) {
+          console.error("Error parsing user data:", error)
+        }
+      }
+    }
   }, [])
 
   const handleLogout = () => {
     localStorage.removeItem("token")
+    localStorage.removeItem("user")
     setIsAuthenticated(false)
+    setUserData(null)
     window.location.href = "/"
+  }
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
   }
 
   const NavLinks = () => (
@@ -53,18 +88,17 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container flex h-16 items-center justify-between">
-        
         {/* LOGO */}
         <div className="flex items-center space-x-2">
           <Link href="/" className="flex items-center space-x-2">
             <Image
               src="/logo.png"
-              alt="Logo MedAssist"
+              alt="CareConnect Logo"
               width={40}
               height={40}
-              className="cursor-pointer"
+              className="object-cover"
             />
-            <span className="text-lg font-semibold hidden sm:block">MedAssist</span>
+            <span className="text-lg font-semibold hidden sm:block text-[#15803d]">Vita</span>
           </Link>
         </div>
 
@@ -73,24 +107,100 @@ export function Header() {
           <NavLinks />
         </nav>
 
-        {/* AÇÕES */}
         <div className="hidden md:flex items-center space-x-3">
           {isAuthenticated ? (
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="flex items-center gap-2">
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
+            <>
+              {/* Notifications Button */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-5 w-5" />
+                    {notificationsCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                      >
+                        {notificationsCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  <DropdownMenuLabel>Notificações</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <div className="max-h-96 overflow-y-auto">
+                    <DropdownMenuItem className="flex flex-col items-start py-3">
+                      <p className="font-medium text-sm">Nova visita agendada</p>
+                      <p className="text-xs text-muted-foreground">João Silva agendou uma visita para amanhã</p>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex flex-col items-start py-3">
+                      <p className="font-medium text-sm">Visita confirmada</p>
+                      <p className="text-xs text-muted-foreground">Sua visita foi confirmada pelo paciente</p>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex flex-col items-start py-3">
+                      <p className="font-medium text-sm">Lembrete de visita</p>
+                      <p className="text-xs text-muted-foreground">Você tem uma visita em 2 horas</p>
+                    </DropdownMenuItem>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="justify-center text-primary">Ver todas as notificações</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* User Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-[#15803d] text-white">
+                        {userData ? getInitials(userData.name) : "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{userData?.name || "Usuário"}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{userData?.email || ""}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Meu Perfil</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/notifications" className="cursor-pointer">
+                      <Bell className="mr-2 h-4 w-4" />
+                      <span>Notificações</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <>
               <Link href="/login">
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="flex items-center gap-2 bg-transparent">
                   <User className="h-4 w-4" />
                   Login
                 </Button>
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="default" size="sm" className="flex items-center gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="flex items-center gap-2 bg-[#15803d] hover:bg-[#166534]"
+                  >
                     <UserPlus className="h-4 w-4" />
                     Cadastro
                   </Button>
@@ -113,7 +223,6 @@ export function Header() {
           )}
         </div>
 
-        {/* MENU MOBILE */}
         <div className="md:hidden">
           <Sheet>
             <SheetTrigger asChild>
@@ -123,29 +232,66 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right" className="w-64">
               <div className="flex flex-col gap-6 mt-8">
+                {isAuthenticated && userData && (
+                  <div className="flex items-center gap-3 pb-4 border-b">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-[#15803d] text-white">{getInitials(userData.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium">{userData.name}</p>
+                      <p className="text-xs text-muted-foreground">{userData.email}</p>
+                    </div>
+                  </div>
+                )}
+
                 <NavLinks />
-                <div className="flex flex-col gap-2">
+
+                <div className="flex flex-col gap-2 pt-4 border-t">
                   {isAuthenticated ? (
-                    <Button variant="ghost" size="sm" onClick={handleLogout} className="justify-start">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </Button>
+                    <>
+                      <Link href="/profile">
+                        <Button variant="ghost" size="sm" className="justify-start w-full">
+                          <User className="h-4 w-4 mr-2" />
+                          Meu Perfil
+                        </Button>
+                      </Link>
+                      <Link href="/notifications">
+                        <Button variant="ghost" size="sm" className="justify-start w-full">
+                          <Bell className="h-4 w-4 mr-2" />
+                          Notificações
+                          {notificationsCount > 0 && (
+                            <Badge variant="destructive" className="ml-auto">
+                              {notificationsCount}
+                            </Badge>
+                          )}
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleLogout}
+                        className="justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sair
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Link href="/login">
-                        <Button variant="outline" size="sm" className="justify-start">
+                        <Button variant="outline" size="sm" className="justify-start w-full bg-transparent">
                           <User className="h-4 w-4 mr-2" />
                           Login
                         </Button>
                       </Link>
                       <Link href="/register-patient">
-                        <Button variant="ghost" size="sm" className="justify-start">
-                          Paciente
+                        <Button variant="ghost" size="sm" className="justify-start w-full">
+                          Cadastrar como Paciente
                         </Button>
                       </Link>
                       <Link href="/register-nurse">
-                        <Button variant="ghost" size="sm" className="justify-start">
-                          Enfermeiro(a)
+                        <Button variant="ghost" size="sm" className="justify-start w-full">
+                          Cadastrar como Enfermeiro(a)
                         </Button>
                       </Link>
                     </>

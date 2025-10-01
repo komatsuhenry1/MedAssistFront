@@ -12,13 +12,14 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
+
 interface NurseData {
     id: string
     name: string
     specialization: string
     experience: number
     rating: number
-    price: number
+    price: number // O preço por hora do enfermeiro
     shift: string
     department: string
     image: string
@@ -56,31 +57,37 @@ export default function NurseProfile() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
+    // Estados para o formulário de agendamento
     const [selectedDate, setSelectedDate] = useState("")
     const [selectedTime, setSelectedTime] = useState("")
     const [message, setMessage] = useState("")
     const [showBookingForm, setShowBookingForm] = useState(false)
-
     const [reason, setReason] = useState("")
     const [visitType, setVisitType] = useState("domiciliar")
+    const [value, setValue] = useState("") // 👈 Nova alteração: Estado para o Valor
+    
+    // Estados para o processo de agendamento
     const [bookingLoading, setBookingLoading] = useState(false)
     const [bookingSuccess, setBookingSuccess] = useState(false)
     const [bookingError, setBookingError] = useState<string | null>(null)
 
+    // Efeito para carregar os dados do enfermeiro
     useEffect(() => {
         const fetchNurseData = async () => {
             try {
                 setLoading(true)
-                const response = await fetch(`http://localhost:8081/api/v1/user/nurse/${nurseId}`, {
+                // Use a constante API_BASE_URL para formar a URL
+                const response = await fetch(`${API_BASE_URL}/user/nurse/${nurseId}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        // Boa prática: usar um fallback para o token
+                        Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
                     },
                 })
 
                 if (!response.ok) {
-                    throw new Error("Enfermeiro não encontrado")
+                    throw new Error("Enfermeiro não encontrado ou erro na rede.")
                 }
 
                 const result: ApiResponse = await response.json()
@@ -88,6 +95,10 @@ export default function NurseProfile() {
                 if (result.success && result.data) {
                     toast.success("Enfermeiro carregado com sucesso!")
                     setNurse(result.data)
+                    // 💡 Boa Prática: Preencher o campo de valor com o preço do enfermeiro
+                    // Para simplificar, vou usar o 'price' direto, mas em produção, 
+                    // você pode querer calcular um valor total.
+                    setValue(result.data.price > 0 ? String(result.data.price) : "")
                 } else {
                     throw new Error(result.message || "Erro ao carregar dados do enfermeiro")
                 }
@@ -103,6 +114,75 @@ export default function NurseProfile() {
         }
     }, [nurseId])
 
+    // Lógica para agendamento
+    const handleBooking = async () => {
+        if (!selectedDate || !selectedTime || !value) { // 👈 Alteração: Validar o campo 'value'
+            setBookingError("Por favor, selecione data, horário e informe o valor.")
+            return
+        }
+
+        const numericValue = parseFloat(value.replace(",", ".")) // 💡 Limpeza: Garante que o valor é numérico
+        if (isNaN(numericValue) || numericValue <= 0) {
+            setBookingError("O valor deve ser um número positivo válido.")
+            return
+        }
+
+        try {
+            setBookingLoading(true)
+            setBookingError(null)
+
+            // Combine data e hora em formato ISO (pode ser necessário ajuste de fuso horário no backend)
+            // Aqui mantemos o formato Z para indicar UTC, conforme o código original.
+            const dateTimeString = `${selectedDate}T${selectedTime}:00Z`
+
+            const requestBody = {
+                description: message || "Consulta de enfermagem",
+                reason: reason || "Atendimento geral",
+                visit_type: visitType,
+                nurse_id: nurseId,
+                date: dateTimeString,
+                value: numericValue, // 👈 Nova alteração: Incluir o valor numérico
+            }
+
+            const token = localStorage.getItem("token")
+            const response = await fetch(`${API_BASE_URL}/user/visit`, { // 💡 Boa Prática: Usar a constante API_BASE_URL
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token ?? ""}`,
+                },
+                body: JSON.stringify(requestBody),
+            })
+
+            const result = await response.json()
+
+            if (response.ok && result.success) {
+                toast.success("Consulta agendada com sucesso!")
+                setBookingSuccess(true)
+                setBookingError(null)
+
+                // Limpar o formulário e fechar o diálogo
+                setTimeout(() => {
+                    setShowBookingForm(false)
+                    setBookingSuccess(false)
+                    setSelectedDate("")
+                    setSelectedTime("")
+                    setMessage("")
+                    setReason("")
+                    setVisitType("domiciliar")
+                    setValue(nurse && typeof nurse.price === "number" && nurse.price > 0 ? String(nurse.price) : "") // 👈 Alteração: Limpa/Reseta o campo value com checagem segura
+                }, 2000)
+            } else {
+                throw new Error(result.message || "Erro ao agendar visita. Verifique a disponibilidade.")
+            }
+        } catch (err) {
+            setBookingError(err instanceof Error ? err.message : "Erro desconhecido ao agendar")
+        } finally {
+            setBookingLoading(false)
+        }
+    }
+
+    // Código de exibição omitido para brevidade, foco no Dialog
     if (loading) {
         return (
             <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
@@ -130,64 +210,6 @@ export default function NurseProfile() {
         )
     }
 
-    const handleBooking = async () => {
-        if (!selectedDate || !selectedTime) {
-            setBookingError("Por favor, selecione data e horário")
-            return
-        }
-
-        try {
-            setBookingLoading(true)
-            setBookingError(null)
-
-            // Combine date and time into ISO format
-            const dateTimeString = `${selectedDate}T${selectedTime}:00Z`
-
-            const requestBody = {
-                description: message || "Consulta de enfermagem",
-                reason: reason || "Atendimento geral",
-                visit_type: visitType,
-                nurse_id: nurseId,
-                date: dateTimeString,
-            }
-
-            const token = localStorage.getItem("token")
-            const response = await fetch("http://localhost:8081/api/v1/user/visit", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(requestBody),
-            })
-
-            const result = await response.json()
-
-            if (response.ok && result.success) {
-                toast.success("Consulta agendada com sucesso!")
-                setBookingSuccess(true)
-                setBookingError(null)
-
-                // Reset form after 2 seconds and close
-                setTimeout(() => {
-                    setShowBookingForm(false)
-                    setBookingSuccess(false)
-                    setSelectedDate("")
-                    setSelectedTime("")
-                    setMessage("")
-                    setReason("")
-                    setVisitType("domiciliar")
-                }, 2000)
-            } else {
-                throw new Error(result.message || "Erro ao agendar visita")
-            }
-        } catch (err) {
-            setBookingError(err instanceof Error ? err.message : "Erro ao agendar visita")
-        } finally {
-            setBookingLoading(false)
-        }
-    }
-
     const imageUrl = nurse?.image ? `${API_BASE_URL}/user/file/${nurse.image}` : "/placeholder-avatar.png"
 
     return (
@@ -195,7 +217,7 @@ export default function NurseProfile() {
             <Header />
 
             <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem 1rem" }}>
-                {/* Back Button */}
+                {/* Botão Voltar */}
                 <Button
                     onClick={() => router.back()}
                     variant="outline"
@@ -205,7 +227,7 @@ export default function NurseProfile() {
                 </Button>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "2rem" }}>
-                    {/* Left Column - Nurse Info */}
+                    {/* Coluna Esquerda - Info Enfermeiro */}
                     <div>
                         <Card style={{ marginBottom: "1.5rem" }}>
                             <CardContent style={{ padding: "2rem", textAlign: "center" }}>
@@ -267,7 +289,7 @@ export default function NurseProfile() {
                             </CardContent>
                         </Card>
 
-                        {/* Availability */}
+                        {/* Disponibilidade */}
                         <Card>
                             <CardHeader>
                                 <CardTitle style={{ color: "#15803d" }}>Disponibilidade</CardTitle>
@@ -295,7 +317,7 @@ export default function NurseProfile() {
                         </Card>
                     </div>
 
-                    {/* Right Column - Details */}
+                    {/* Coluna Direita - Detalhes */}
                     <div>
                         {/* Bio */}
                         <Card style={{ marginBottom: "1.5rem" }}>
@@ -309,7 +331,7 @@ export default function NurseProfile() {
                             </CardContent>
                         </Card>
 
-                        {/* Qualifications */}
+                        {/* Qualificações */}
                         <Card style={{ marginBottom: "1.5rem" }}>
                             <CardHeader>
                                 <CardTitle style={{ color: "#15803d" }}>Qualificações</CardTitle>
@@ -336,7 +358,7 @@ export default function NurseProfile() {
                             </CardContent>
                         </Card>
 
-                        {/* Services */}
+                        {/* Serviços */}
                         <Card style={{ marginBottom: "1.5rem" }}>
                             <CardHeader>
                                 <CardTitle style={{ color: "#15803d" }}>Serviços Oferecidos</CardTitle>
@@ -363,7 +385,7 @@ export default function NurseProfile() {
                             </CardContent>
                         </Card>
 
-                        {/* Reviews */}
+                        {/* Avaliações */}
                         <Card>
                             <CardHeader>
                                 <CardTitle style={{ color: "#15803d" }}>Avaliações dos Pacientes</CardTitle>
@@ -454,6 +476,17 @@ export default function NurseProfile() {
                         </div>
 
                         <div style={{ marginBottom: "1rem" }}>
+                            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "600" }}>Valor da Consulta (R$)</label> 
+                            {/* 👈 Nova alteração: Campo de Valor */}
+                            <Input
+                                type="number"
+                                placeholder="Ex: 80.00"
+                                value={value}
+                                onChange={(e) => setValue(e.target.value)}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: "1rem" }}>
                             <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "600" }}>Tipo de Visita</label>
                             <Select value={visitType} onValueChange={setVisitType}>
                                 <SelectTrigger>
@@ -499,7 +532,7 @@ export default function NurseProfile() {
                             <Button
                                 onClick={handleBooking}
                                 style={{ backgroundColor: "#15803d", color: "white", flex: 1 }}
-                                disabled={!selectedDate || !selectedTime || bookingLoading}
+                                disabled={!selectedDate || !selectedTime || !value || bookingLoading} // 👈 Alteração: Desabilita se 'value' estiver vazio
                             >
                                 {bookingLoading ? "Agendando..." : "Confirmar Agendamento"}
                             </Button>

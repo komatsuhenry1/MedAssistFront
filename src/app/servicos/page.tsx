@@ -306,7 +306,7 @@ export default function Servicos() {
                 <div className="container mx-auto px-4">
                     <div className="grid md:grid-cols-4 gap-8">
                         <div>
-                            <h3 className="font-bold text-lg mb-4">MedAssist</h3>
+                            <h3 className="font-bold text-lg mb-4">Vita</h3>
                             <p className="text-sm" style={{ color: "#6b7280" }}>
                                 Conectando cuidado e confiança através de uma plataforma segura e profissional de serviços de
                                 enfermagem.
@@ -393,7 +393,7 @@ export default function Servicos() {
                     </div>
 
                     <div className="mt-8 pt-8 text-center text-sm" style={{ borderTop: "1px solid #d1d5db", color: "#6b7280" }}>
-                        <p>&copy; 2025 MedAssist. Todos os direitos reservados.</p>
+                        <p>&copy; 2025 Vita. Todos os direitos reservados.</p>
                     </div>
                 </div>
             </footer>

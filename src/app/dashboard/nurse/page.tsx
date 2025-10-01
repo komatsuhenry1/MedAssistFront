@@ -10,9 +10,35 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Wifi, WifiOff, Loader2 } from "lucide-react"
 
 export default function NurseDashboard() {
   const [availability, setAvailability] = useState(true)
+  const [isOnline, setIsOnline] = useState(false)
+  const [isToggling, setIsToggling] = useState(false)
+
+  const toggleOnlineStatus = async () => {
+    setIsToggling(true)
+    try {
+      const response = await fetch("http://localhost:8081/api/v1/nurse/online", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        setIsOnline(!isOnline)
+      } else {
+        console.error("Failed to toggle online status")
+      }
+    } catch (error) {
+      console.error("Error toggling online status:", error)
+    } finally {
+      setIsToggling(false)
+    }
+  }
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
@@ -31,6 +57,61 @@ export default function NurseDashboard() {
           <p style={{ fontSize: "1.25rem", opacity: 0.9, marginBottom: "2rem" }}>
             Gerencie seus atendimentos e acompanhe sua carreira profissional
           </p>
+
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
+            <button
+              onClick={toggleOnlineStatus}
+              disabled={isToggling}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                padding: "1rem 2rem",
+                fontSize: "1.125rem",
+                fontWeight: "600",
+                borderRadius: "9999px",
+                border: "3px solid",
+                borderColor: isOnline ? "#10b981" : "#6b7280",
+                backgroundColor: isOnline ? "#10b981" : "#374151",
+                color: "white",
+                cursor: isToggling ? "not-allowed" : "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: isOnline
+                  ? "0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.3)"
+                  : "0 4px 6px rgba(0, 0, 0, 0.1)",
+                transform: isToggling ? "scale(0.95)" : "scale(1)",
+                opacity: isToggling ? 0.7 : 1,
+              }}
+              onMouseEnter={(e) => {
+                if (!isToggling) {
+                  e.currentTarget.style.transform = "scale(1.05)"
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isToggling) {
+                  e.currentTarget.style.transform = "scale(1)"
+                }
+              }}
+            >
+              {isToggling ? (
+                <Loader2 className="animate-spin" size={24} />
+              ) : isOnline ? (
+                <Wifi size={24} />
+              ) : (
+                <WifiOff size={24} />
+              )}
+              <span>{isToggling ? "Alterando..." : isOnline ? "ONLINE - Disponível" : "OFFLINE - Indisponível"}</span>
+              <div
+                style={{
+                  width: "12px",
+                  height: "12px",
+                  borderRadius: "50%",
+                  backgroundColor: isOnline ? "#ffffff" : "#9ca3af",
+                  animation: isOnline ? "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" : "none",
+                }}
+              />
+            </button>
+          </div>
 
           {/* Stats Cards */}
           <div

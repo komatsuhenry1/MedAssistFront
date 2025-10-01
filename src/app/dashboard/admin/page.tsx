@@ -257,7 +257,7 @@ const AdminDashboard = () => {
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
           <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Dashboard Administrativo</h1>
           <p style={{ fontSize: "1.25rem", opacity: 0.9 }}>
-            Gerencie usuários, monitore atividades e acompanhe métricas da plataforma MedAssist
+            Gerencie usuários, monitore atividades e acompanhe métricas da plataforma Vita
           </p>
         </div>
       </section>
