@@ -71,9 +71,9 @@ export default function Contato() {
                 type: "success",
             })
             setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
-        } catch (error: any) {
+        } catch (error: unknown) {
             setFormStatus({
-                message: error.message || "Falha na comunicação com o servidor.",
+                message: error instanceof Error ? error.message : "Falha na comunicação com o servidor.",
                 type: "error",
             })
         } finally {

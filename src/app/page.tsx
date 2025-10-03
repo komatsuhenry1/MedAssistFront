@@ -277,8 +277,8 @@ export default function Home() {
                   <span className="text-2xl">⭐⭐⭐⭐⭐</span>
                 </div>
                 <p className="text-sm italic" style={{ color: "#6b7280" }}>
-                  "Excelente serviço! Os enfermeiros são muito profissionais e atenciosos. Recomendo para qualquer
-                  pessoa que precise de cuidados domiciliares."
+                  &ldquo;Excelente serviço! Os enfermeiros são muito profissionais e atenciosos. Recomendo para qualquer
+                  pessoa que precise de cuidados domiciliares.&rdquo;
                 </p>
                 <p className="text-sm font-medium mt-2">- Maria Silva, São Paulo</p>
               </div>
