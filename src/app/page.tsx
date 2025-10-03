@@ -332,24 +332,24 @@ export default function Home() {
               <h4 className="font-semibold mb-4">Serviços</h4>
               <ul className="space-y-2 text-sm" style={{ color: "#6b7280" }}>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     Cuidados Domiciliares
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     Cuidados Pós-Operatórios
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     Atendimento 24h
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     Cuidados Geriátricos
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -358,24 +358,24 @@ export default function Home() {
               <h4 className="font-semibold mb-4">Empresa</h4>
               <ul className="space-y-2 text-sm" style={{ color: "#6b7280" }}>
                 <li>
-                  <a href="/sobre" className="hover:text-green-700 transition-colors">
+                  <Link href="/sobre" className="hover:text-green-700 transition-colors">
                     Sobre Nós
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/contato" className="hover:text-green-700 transition-colors">
+                  <Link href="/contato" className="hover:text-green-700 transition-colors">
                     Contato
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     Carreiras
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     Blog
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -384,24 +384,24 @@ export default function Home() {
               <h4 className="font-semibold mb-4">Suporte</h4>
               <ul className="space-y-2 text-sm" style={{ color: "#6b7280" }}>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     Central de Ajuda
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     Política de Privacidade
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     Termos de Uso
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-green-700 transition-colors">
+                  <Link href="#" className="hover:text-green-700 transition-colors">
                     FAQ
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
