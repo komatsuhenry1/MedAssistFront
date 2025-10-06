@@ -188,7 +188,7 @@ export default function RegisterPage() {
     })
 
     try {
-      const registerUrl = `http://localhost:8081/api/v1/auth/nurse`
+      const registerUrl = `http://192.168.18.131:8081/api/v1/auth/nurse`
       const response = await fetch(registerUrl, {
         method: "POST",
         body: formDataToSend,

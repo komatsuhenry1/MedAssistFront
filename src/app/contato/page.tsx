@@ -49,7 +49,7 @@ export default function Contato() {
         setFormStatus({ message: "", type: "" })
 
         try {
-            const contactUsUrl = `http://localhost:8081/api/v1/user/contact`
+            const contactUsUrl = `http://192.168.18.131:8081/api/v1/user/contact`
             const response = await fetch(contactUsUrl, {
                 method: "POST",
                 headers: {

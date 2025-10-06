@@ -16,7 +16,7 @@ import { toast } from "sonner"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" })
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,15 +26,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    setIsSubmitting(true);
-
-    // mova a variável para dentro da função que a utiliza
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-    console.log("URL da API:", API_BASE_URL) // Adicionei este log para você ver que agora a variável está definida.
+    setIsSubmitting(true)
 
     try {
-      const loginUrl = `${API_BASE_URL}/auth/login`;
+      const loginUrl = `http://192.168.18.131:8081/api/v1/auth/login`
 
       const res = await fetch(loginUrl, {
         method: "POST",
@@ -43,35 +38,39 @@ export default function LoginPage() {
       })
 
       const data = await res.json()
-      console.log("Resposta da API:", data)
 
       if (data.success) {
-        const role = data.data.user.role
-        console.log("role: ", role)
+        toast.success("Login realizado com sucesso!")
 
-        localStorage.setItem("token", data.data.token)
+        const user = data.data.user
+        const token = data.data.token
 
-        if (role === "NURSE") {
-          toast.success("Login realizado com sucesso!")
+        // --- MUDANÇA PRINCIPAL AQUI ---
+        // 1. Salvamos o token, que é essencial para a autenticação.
+        localStorage.setItem("token", token)
+
+        // 2. Salvamos o objeto 'user' inteiro como uma string JSON.
+        //    O Header vai ler este objeto para exibir nome, email e os links corretos.
+        localStorage.setItem("user", JSON.stringify(user))
+
+        // A lógica de redirecionamento permanece a mesma
+        if (user.role === "NURSE") {
           router.push("/dashboard/nurse")
-        } else if (role === "ADMIN") {
-          toast.success("Login realizado com sucesso!")
+        } else if (user.role === "ADMIN") {
           router.push("/dashboard/admin")
-        } else if (role === "PATIENT") {
-          toast.success("Login realizado com sucesso!")
-          router.push("/visit/nurses-list")
+        } else if (user.role === "PATIENT") {
+          router.push("/visit/nurses-list") // Rota ajustada como no Header
         } else {
           router.push("/")
         }
       } else {
-        console.log()
-        toast.error(data.message)
+        toast.error(data.message || "Falha no login. Verifique suas credenciais.")
       }
     } catch (error) {
       console.error("Erro no login:", error)
+      toast.error("Ocorreu um erro ao tentar fazer login. Tente novamente.")
     } finally {
-      // sempre executa
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
   }
 

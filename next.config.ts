@@ -16,6 +16,18 @@ const nextConfig: NextConfig = {
         pathname: '/api/v1/admin/file/**',
       },
       {
+        protocol: 'http',
+        hostname: '192.168.18.131',
+        port: '8081',
+        pathname: '/api/v1/user/file/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '192.168.18.131',
+        port: '8081',
+        pathname: '/api/v1/admin/file/**',
+      },
+      {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         port: '',

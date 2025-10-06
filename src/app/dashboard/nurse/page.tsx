@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/Header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,16 +11,137 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Wifi, WifiOff, Loader2 } from "lucide-react"
+import { toast } from "sonner" // ⬅️ ALTERADO: Importação do Sonner
+
+// ⬇️ REMOVIDO: import { useToast } from "@/hooks/use-toast"
+
+interface DashboardStats {
+  patients_attended: number
+  appointments_today: number
+  average_rating: number
+  monthly_earnings: number
+}
+
+interface Visit {
+  id: string
+  description: string
+  reason: string
+  visit_type: string
+  visit_value: number
+  created_at: string
+  date: string
+  status: "PENDING" | "CONFIRMED" | "COMPLETED"
+  patient_name: string
+  patient_id: string
+  nurse_name: string
+}
+
+interface Profile {
+  name: string
+  email: string
+  phone: string
+  coren: string
+  experience_years: number
+  department: string
+  bio: string
+}
+
+interface Availability {
+  is_available: boolean
+  start_time: string
+  end_time: string
+  specialization: string
+}
+
+interface DashboardData {
+  online: boolean
+  stats: DashboardStats
+  visits: Visit[]
+  profile: Profile
+  availability: Availability
+}
+
+interface ApiResponse {
+  data: DashboardData
+  message: string
+  success: boolean
+}
 
 export default function NurseDashboard() {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [availability, setAvailability] = useState(true)
   const [isOnline, setIsOnline] = useState(false)
   const [isToggling, setIsToggling] = useState(false)
 
+  const [availabilityForm, setAvailabilityForm] = useState({
+    start_time: "",
+    end_time: "",
+    specialization: "",
+  })
+  const [isUpdatingAvailability, setIsUpdatingAvailability] = useState(false)
+
+  const [profileForm, setProfileForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    license_number: "",
+    years_experience: 0,
+    department: "",
+    bio: "",
+  })
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
+
+  // ⬇️ REMOVIDO: const { toast } = useToast()
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch("http://192.168.18.131:8081/api/v1/nurse/dashboard", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        })
+
+        if (response.ok) {
+          const apiResponse: ApiResponse = await response.json()
+          const data = apiResponse.data
+          setDashboardData(data)
+          setIsOnline(data.online)
+          setAvailability(data.availability.is_available)
+
+          setAvailabilityForm({
+            start_time: data.availability.start_time,
+            end_time: data.availability.end_time,
+            specialization: data.availability.specialization,
+          })
+
+          setProfileForm({
+            name: data.profile.name,
+            email: data.profile.email,
+            phone: data.profile.phone,
+            license_number: data.profile.coren,
+            years_experience: data.profile.experience_years,
+            department: data.profile.department,
+            bio: data.profile.bio,
+          })
+        } else {
+          console.error("Failed to fetch dashboard data")
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
+
   const toggleOnlineStatus = async () => {
     setIsToggling(true)
     try {
-      const response = await fetch("http://localhost:8081/api/v1/nurse/online", {
+      const response = await fetch("http://192.168.18.131:8081/api/v1/nurse/online", {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -30,13 +151,219 @@ export default function NurseDashboard() {
 
       if (response.ok) {
         setIsOnline(!isOnline)
+        // ⬅️ ALTERADO: Chamada do toast com Sonner
+        toast.success(`Status alterado para ${!isOnline ? "ONLINE" : "OFFLINE"}`, {
+          description: !isOnline ? "Você está disponível para novos atendimentos." : "Você está indisponível para novos atendimentos.",
+        })
       } else {
         console.error("Failed to toggle online status")
+        // ⬅️ ALTERADO: Chamada do toast com Sonner
+        toast.error("Falha ao alternar status online.", {
+          description: "Tente novamente ou verifique sua conexão.",
+        })
       }
     } catch (error) {
       console.error("Error toggling online status:", error)
+      // ⬅️ ALTERADO: Chamada do toast com Sonner
+      toast.error("Erro ao alternar status online.", {
+        description: "Um erro inesperado ocorreu.",
+      })
     } finally {
       setIsToggling(false)
+    }
+  }
+
+  const getScheduleVisits = () => {
+    if (!dashboardData) return []
+    return dashboardData.visits.filter((visit) => visit.status === "PENDING" || visit.status === "CONFIRMED")
+  }
+
+  const getCompletedVisits = () => {
+    if (!dashboardData) return []
+    return dashboardData.visits.filter((visit) => visit.status === "COMPLETED")
+  }
+
+  const getUniquePatients = () => {
+    if (!dashboardData) return []
+    const patientMap = new Map()
+    dashboardData.visits.forEach((visit) => {
+      if (!patientMap.has(visit.patient_id)) {
+        patientMap.set(visit.patient_id, {
+          id: visit.patient_id,
+          name: visit.patient_name,
+          last_visit: visit.date,
+        })
+      }
+    })
+    return Array.from(patientMap.values())
+  }
+
+  const formatVisitType = (type: string) => {
+    const types: { [key: string]: string } = {
+      clinica: "Consulta Clínica",
+      domiciliar: "Consulta Domiciliar",
+    }
+    return types[type] || type
+  }
+
+  const formatStatus = (status: string) => {
+    const statuses: { [key: string]: string } = {
+      PENDING: "Pendente",
+      CONFIRMED: "Confirmado",
+      COMPLETED: "Concluído",
+    }
+    return statuses[status] || status
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
+        <Header />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "calc(100vh - 80px)",
+          }}
+        >
+          <Loader2 className="animate-spin" size={48} style={{ color: "#15803d" }} />
+        </div>
+      </div>
+    )
+  }
+
+  if (!dashboardData) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
+        <Header />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "calc(100vh - 80px)",
+            flexDirection: "column",
+            gap: "1rem",
+          }}
+        >
+          <p style={{ fontSize: "1.25rem", color: "#6b7280" }}>Erro ao carregar dados do dashboard</p>
+          <Button onClick={() => window.location.reload()} style={{ backgroundColor: "#15803d", color: "white" }}>
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const handleUpdateAvailability = async () => {
+    setIsUpdatingAvailability(true)
+    try {
+      const response = await fetch("http://192.168.18.131:8081/api/v1/nurse/update", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          start_time: availabilityForm.start_time,
+          end_time: availabilityForm.end_time,
+          specialization: availabilityForm.specialization,
+        }),
+      })
+
+      if (response.ok) {
+        // ⬅️ ALTERADO: Chamada do toast com Sonner
+        toast.success("Sucesso!", {
+          description: "Disponibilidade atualizada com sucesso.",
+        })
+
+        // Update local state
+        if (dashboardData) {
+          setDashboardData({
+            ...dashboardData,
+            availability: {
+              ...dashboardData.availability,
+              start_time: availabilityForm.start_time,
+              end_time: availabilityForm.end_time,
+              specialization: availabilityForm.specialization,
+            },
+          })
+        }
+      } else {
+        // ⬅️ ALTERADO: Chamada do toast com Sonner
+        toast.error("Erro", {
+          description: "Falha ao atualizar disponibilidade.",
+          // Observação: Sonner não usa 'variant', mas você pode estilizar com classes se necessário
+        })
+      }
+    } catch (error) {
+      console.error("Error updating availability:", error)
+      // ⬅️ ALTERADO: Chamada do toast com Sonner
+      toast.error("Erro", {
+        description: "Erro ao atualizar disponibilidade.",
+      })
+    } finally {
+      setIsUpdatingAvailability(false)
+    }
+  }
+
+  const handleUpdateProfile = async () => {
+    setIsUpdatingProfile(true)
+    try {
+      const response = await fetch("http://192.168.18.131:8081/api/v1/nurse/update", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: profileForm.name,
+          email: profileForm.email,
+          phone: profileForm.phone,
+          license_number: profileForm.license_number,
+          years_experience: profileForm.years_experience,
+          department: profileForm.department,
+          bio: profileForm.bio,
+        }),
+      })
+
+      if (response.ok) {
+        // ⬅️ ALTERADO: Chamada do toast com Sonner
+        toast.success("Sucesso!", {
+          description: "Perfil atualizado com sucesso.",
+        })
+
+        // Update local state
+        if (dashboardData) {
+          setDashboardData({
+            ...dashboardData,
+            profile: {
+              ...dashboardData.profile,
+              name: profileForm.name,
+              email: profileForm.email,
+              phone: profileForm.phone,
+              coren: profileForm.license_number,
+              experience_years: profileForm.years_experience,
+              department: profileForm.department,
+              bio: profileForm.bio,
+            },
+          })
+        }
+      } else {
+        // ⬅️ ALTERADO: Chamada do toast com Sonner
+        toast.error("Erro", {
+          description: "Falha ao atualizar perfil.",
+        })
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error)
+      // ⬅️ ALTERADO: Chamada do toast com Sonner
+      toast.error("Erro", {
+        description: "Erro ao atualizar perfil.",
+      })
+    } finally {
+      setIsUpdatingProfile(false)
     }
   }
 
@@ -124,28 +451,36 @@ export default function NurseDashboard() {
           >
             <Card style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", border: "none" }}>
               <CardContent style={{ padding: "1.5rem", textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: "bold", color: "white" }}>24</div>
+                <div style={{ fontSize: "2rem", fontWeight: "bold", color: "white" }}>
+                  {dashboardData.stats.patients_attended}
+                </div>
                 <div style={{ fontSize: "0.875rem", color: "rgba(255, 255, 255, 0.8)" }}>Pacientes Atendidos</div>
               </CardContent>
             </Card>
 
             <Card style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", border: "none" }}>
               <CardContent style={{ padding: "1.5rem", textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: "bold", color: "white" }}>8</div>
+                <div style={{ fontSize: "2rem", fontWeight: "bold", color: "white" }}>
+                  {dashboardData.stats.appointments_today}
+                </div>
                 <div style={{ fontSize: "0.875rem", color: "rgba(255, 255, 255, 0.8)" }}>Consultas Hoje</div>
               </CardContent>
             </Card>
 
             <Card style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", border: "none" }}>
               <CardContent style={{ padding: "1.5rem", textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: "bold", color: "white" }}>4.8</div>
+                <div style={{ fontSize: "2rem", fontWeight: "bold", color: "white" }}>
+                  {dashboardData.stats.average_rating.toFixed(1)}
+                </div>
                 <div style={{ fontSize: "0.875rem", color: "rgba(255, 255, 255, 0.8)" }}>Avaliação Média</div>
               </CardContent>
             </Card>
 
             <Card style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", border: "none" }}>
               <CardContent style={{ padding: "1.5rem", textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: "bold", color: "white" }}>R$ 2.450</div>
+                <div style={{ fontSize: "2rem", fontWeight: "bold", color: "white" }}>
+                  R$ {dashboardData.stats.monthly_earnings.toFixed(2)}
+                </div>
                 <div style={{ fontSize: "0.875rem", color: "rgba(255, 255, 255, 0.8)" }}>Ganhos do Mês</div>
               </CardContent>
             </Card>
@@ -164,7 +499,7 @@ export default function NurseDashboard() {
             <TabsTrigger value="profile">Perfil</TabsTrigger>
           </TabsList>
 
-          {/* Schedule Tab */}
+          {/* Schedule Tab - Shows PENDING and CONFIRMED visits */}
           <TabsContent value="schedule" className="space-y-4">
             <Card>
               <CardHeader>
@@ -173,39 +508,42 @@ export default function NurseDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { time: "09:00", patient: "Maria Silva", type: "Consulta Domiciliar", status: "confirmado" },
-                    { time: "11:30", patient: "João Santos", type: "Aplicação de Medicamento", status: "pendente" },
-                    { time: "14:00", patient: "Ana Costa", type: "Curativo", status: "confirmado" },
-                    { time: "16:30", patient: "Pedro Lima", type: "Consulta Domiciliar", status: "confirmado" },
-                  ].map((appointment, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "1rem",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "0.5rem",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: "bold" }}>{appointment.time}</div>
-                        <div style={{ color: "#6b7280" }}>{appointment.patient}</div>
-                        <div style={{ fontSize: "0.875rem", color: "#9ca3af" }}>{appointment.type}</div>
+                  {getScheduleVisits().length === 0 ? (
+                    <p style={{ textAlign: "center", color: "#6b7280", padding: "2rem" }}>
+                      Nenhuma visita agendada no momento
+                    </p>
+                  ) : (
+                    getScheduleVisits().map((visit) => (
+                      <div
+                        key={visit.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "1rem",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "0.5rem",
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: "bold" }}>{visit.date}</div>
+                          <div style={{ color: "#6b7280" }}>{visit.patient_name}</div>
+                          <div style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
+                            {formatVisitType(visit.visit_type)} • R$ {visit.visit_value.toFixed(2)}
+                          </div>
+                        </div>
+                        <Badge variant={visit.status === "CONFIRMED" ? "default" : "secondary"}>
+                          {formatStatus(visit.status)}
+                        </Badge>
                       </div>
-                      <Badge variant={appointment.status === "confirmado" ? "default" : "secondary"}>
-                        {appointment.status === "confirmado" ? "Confirmado" : "Pendente"}
-                      </Badge>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Patients Tab */}
+          {/* Patients Tab - Shows unique patients from all visits */}
           <TabsContent value="patients" className="space-y-4">
             <Card>
               <CardHeader>
@@ -214,41 +552,38 @@ export default function NurseDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { name: "Maria Silva", age: 65, condition: "Diabetes", lastVisit: "Hoje" },
-                    { name: "João Santos", age: 45, condition: "Hipertensão", lastVisit: "Ontem" },
-                    { name: "Ana Costa", age: 78, condition: "Pós-cirúrgico", lastVisit: "2 dias atrás" },
-                    { name: "Pedro Lima", age: 52, condition: "Fisioterapia", lastVisit: "3 dias atrás" },
-                  ].map((patient, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "1rem",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "0.5rem",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: "bold" }}>{patient.name}</div>
-                        <div style={{ color: "#6b7280" }}>
-                          {patient.age} anos • {patient.condition}
+                  {getUniquePatients().length === 0 ? (
+                    <p style={{ textAlign: "center", color: "#6b7280", padding: "2rem" }}>Nenhum paciente cadastrado</p>
+                  ) : (
+                    getUniquePatients().map((patient) => (
+                      <div
+                        key={patient.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "1rem",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "0.5rem",
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: "bold" }}>{patient.name}</div>
+                          <div style={{ color: "#6b7280" }}>ID: {patient.id}</div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: "0.875rem", color: "#9ca3af" }}>Última visita:</div>
+                          <div style={{ fontSize: "0.875rem", fontWeight: "medium" }}>{patient.last_visit}</div>
                         </div>
                       </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: "0.875rem", color: "#9ca3af" }}>Última visita:</div>
-                        <div style={{ fontSize: "0.875rem", fontWeight: "medium" }}>{patient.lastVisit}</div>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* History Tab */}
+          {/* History Tab - Shows COMPLETED visits */}
           <TabsContent value="history" className="space-y-4">
             <Card>
               <CardHeader>
@@ -257,57 +592,34 @@ export default function NurseDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    {
-                      date: "15/01/2024",
-                      patient: "Carlos Oliveira",
-                      service: "Consulta Domiciliar",
-                      duration: "45 min",
-                      payment: "R$ 120",
-                    },
-                    {
-                      date: "14/01/2024",
-                      patient: "Lucia Ferreira",
-                      service: "Aplicação de Medicamento",
-                      duration: "30 min",
-                      payment: "R$ 80",
-                    },
-                    {
-                      date: "13/01/2024",
-                      patient: "Roberto Silva",
-                      service: "Curativo",
-                      duration: "25 min",
-                      payment: "R$ 60",
-                    },
-                    {
-                      date: "12/01/2024",
-                      patient: "Helena Costa",
-                      service: "Consulta Domiciliar",
-                      duration: "50 min",
-                      payment: "R$ 130",
-                    },
-                  ].map((record, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "1rem",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "0.5rem",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: "bold" }}>{record.patient}</div>
-                        <div style={{ color: "#6b7280" }}>{record.service}</div>
-                        <div style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
-                          {record.date} • {record.duration}
+                  {getCompletedVisits().length === 0 ? (
+                    <p style={{ textAlign: "center", color: "#6b7280", padding: "2rem" }}>
+                      Nenhum atendimento concluído
+                    </p>
+                  ) : (
+                    getCompletedVisits().map((visit) => (
+                      <div
+                        key={visit.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "1rem",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "0.5rem",
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: "bold" }}>{visit.patient_name}</div>
+                          <div style={{ color: "#6b7280" }}>{formatVisitType(visit.visit_type)}</div>
+                          <div style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
+                            {visit.date} • Criado em: {visit.created_at}
+                          </div>
                         </div>
+                        <div style={{ fontWeight: "bold", color: "#15803d" }}>R$ {visit.visit_value.toFixed(2)}</div>
                       </div>
-                      <div style={{ fontWeight: "bold", color: "#15803d" }}>{record.payment}</div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -336,17 +648,30 @@ export default function NurseDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="start-time">Horário de Início</Label>
-                    <Input id="start-time" type="time" defaultValue="08:00" />
+                    <Input
+                      id="start-time"
+                      type="time"
+                      value={availabilityForm.start_time}
+                      onChange={(e) => setAvailabilityForm({ ...availabilityForm, start_time: e.target.value })}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="end-time">Horário de Término</Label>
-                    <Input id="end-time" type="time" defaultValue="18:00" />
+                    <Input
+                      id="end-time"
+                      type="time"
+                      value={availabilityForm.end_time}
+                      onChange={(e) => setAvailabilityForm({ ...availabilityForm, end_time: e.target.value })}
+                    />
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="specialization">Especialização</Label>
-                  <Select defaultValue="pediatria">
+                  <Select
+                    value={availabilityForm.specialization}
+                    onValueChange={(value) => setAvailabilityForm({ ...availabilityForm, specialization: value })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione sua especialização" />
                     </SelectTrigger>
@@ -360,7 +685,20 @@ export default function NurseDashboard() {
                   </Select>
                 </div>
 
-                <Button style={{ backgroundColor: "#15803d", color: "white" }}>Salvar Configurações</Button>
+                <Button
+                  onClick={handleUpdateAvailability}
+                  disabled={isUpdatingAvailability}
+                  style={{ backgroundColor: "#15803d", color: "white" }}
+                >
+                  {isUpdatingAvailability ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    "Salvar Configurações"
+                  )}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -376,27 +714,55 @@ export default function NurseDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="name">Nome Completo</Label>
-                    <Input id="name" defaultValue="Ana Paula Silva" />
+                    <Input
+                      id="name"
+                      value={profileForm.name}
+                      onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue="ana.silva@email.com" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" defaultValue="(11) 99999-9999" />
+                    <Input
+                      id="phone"
+                      value={profileForm.phone}
+                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="coren">COREN</Label>
-                    <Input id="coren" defaultValue="123456-SP" />
+                    <Input
+                      id="coren"
+                      value={profileForm.license_number}
+                      onChange={(e) => setProfileForm({ ...profileForm, license_number: e.target.value })}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="experience">Anos de Experiência</Label>
-                    <Input id="experience" type="number" defaultValue="5" />
+                    <Input
+                      id="experience"
+                      type="number"
+                      value={profileForm.years_experience}
+                      onChange={(e) =>
+                        setProfileForm({ ...profileForm, years_experience: Number.parseInt(e.target.value) || 0 })
+                      }
+                    />
                   </div>
                   <div>
                     <Label htmlFor="department">Departamento</Label>
-                    <Input id="department" defaultValue="Pediatria" />
+                    <Input
+                      id="department"
+                      value={profileForm.department}
+                      onChange={(e) => setProfileForm({ ...profileForm, department: e.target.value })}
+                    />
                   </div>
                 </div>
 
@@ -413,11 +779,25 @@ export default function NurseDashboard() {
                       fontSize: "0.875rem",
                     }}
                     placeholder="Conte um pouco sobre sua experiência e especialidades..."
-                    defaultValue="Enfermeira especializada em pediatria com 5 anos de experiência em atendimento domiciliar. Focada em cuidados especializados para crianças e adolescentes."
+                    value={profileForm.bio}
+                    onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
                   />
                 </div>
 
-                <Button style={{ backgroundColor: "#15803d", color: "white" }}>Atualizar Perfil</Button>
+                <Button
+                  onClick={handleUpdateProfile}
+                  disabled={isUpdatingProfile}
+                  style={{ backgroundColor: "#15803d", color: "white" }}
+                >
+                  {isUpdatingProfile ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Atualizando...
+                    </>
+                  ) : (
+                    "Atualizar Perfil"
+                  )}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>

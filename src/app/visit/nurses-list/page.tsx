@@ -250,9 +250,9 @@ export default function PatientDashboard() {
         </Card>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-          <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
+          {/* <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
             {filteredNurses.length} Enfermeiros Encontrados
-          </h2>
+          </h2> */}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "1.5rem" }}>

@@ -86,7 +86,7 @@ const AdminDashboard = () => {
     try {
       const token = localStorage.getItem("token")
 
-      const response = await fetch("http://localhost:8081/api/v1/admin/dashboard", {
+      const response = await fetch("http://192.168.18.131:8081/api/v1/admin/dashboard", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -112,7 +112,7 @@ const AdminDashboard = () => {
     setCurrentNurseName(nurse.name)
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch(`http://localhost:8081/api/v1/admin/documents/${nurse.id}`, {
+      const response = await fetch(`http://192.168.18.131:8081/api/v1/admin/documents/${nurse.id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -139,7 +139,7 @@ const AdminDashboard = () => {
       const token = localStorage.getItem("token")
       const fullDescription = details ? `${description} - ${details}` : description
 
-      const response = await fetch(`http://localhost:8081/api/v1/admin/reject/${nurseId}`, {
+      const response = await fetch(`http://192.168.18.131:8081/api/v1/admin/reject/${nurseId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -188,7 +188,7 @@ const AdminDashboard = () => {
     try {
       const token = localStorage.getItem("token")
 
-      const response = await fetch(`http://localhost:8081/api/v1/admin/approve/${nurseId}`, {
+      const response = await fetch(`http://192.168.18.131:8081/api/v1/admin/approve/${nurseId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
