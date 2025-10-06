@@ -42,13 +42,15 @@ export default function PatientProfile() {
         const fetchPatientData = async () => {
             try {
                 setLoading(true)
-                const response = await fetch(`http://192.168.18.131:8081/api/v1/nurse/patient/${patientId}`, {
+                const response = await fetch(`http://localhost:8081/api/v1/nurse/patient/${patientId}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
                 })
+
+                console.log("response: ", response)
 
                 if (!response.ok) {
                     throw new Error("Paciente não encontrado")

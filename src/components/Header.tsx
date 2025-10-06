@@ -22,8 +22,10 @@ interface UserData {
   name: string
   email: string
   role: "PATIENT" | "NURSE" | "ADMIN"// Usando tipos literais para mais segurança
+  id: string
   profilePictureUrl?: string // Campo para a foto de perfil
 }
+
 
 export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -50,6 +52,8 @@ export function Header() {
       }
     }
   }, [])
+
+
 
   const handleLogout = () => {
     localStorage.removeItem("token")
@@ -119,7 +123,7 @@ export function Header() {
       case "ADMIN":
         return (
           <>
-          {baseLinks}
+            {baseLinks}
             <a href="/dashboard/admin" className="text-sm font-medium hover:text-primary transition-colors">
               Dashboard
             </a>
@@ -200,11 +204,16 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <a href="/profile" className="cursor-pointer flex items-center">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Meu Perfil</span>
-                    </a>
+                  <DropdownMenuItem>
+                    {userData ? (
+                      <a
+                        href={`/patient-profile/${userData.id}`}
+                        className="cursor-pointer flex items-center"
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Meu Perfil</span>
+                      </a>
+                    ) : null}
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <a href="/notifications" className="cursor-pointer flex items-center">
