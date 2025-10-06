@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, FileImage } from "lucide-react" // ✅ NOVO: Importei o ícone FileImage
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -21,6 +21,9 @@ export default function PatientRegisterPage() {
     cpf: "",
     password: "",
   })
+  
+  // ✅ NOVO: Estado para armazenar o arquivo da imagem de perfil
+  const [profileImage, setProfileImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,10 +31,32 @@ export default function PatientRegisterPage() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  // ✅ NOVO: Função para lidar com a seleção do arquivo
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProfileImage(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     setIsSubmitting(true)
+
+    // ✅ MUDANÇA PRINCIPAL: Usar FormData para enviar os dados
+    const data = new FormData();
+
+    // Adiciona todos os campos de texto ao FormData
+    data.append("name", formData.name);
+    data.append("email", formData.email);
+    data.append("phone", formData.phone);
+    data.append("address", formData.address);
+    data.append("cpf", formData.cpf);
+    data.append("password", formData.password);
+
+    // Adiciona a imagem de perfil, se uma foi selecionada
+    if (profileImage) {
+      data.append("image_profile", profileImage);
+    }
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -40,21 +65,25 @@ export default function PatientRegisterPage() {
 
       const res = await fetch(registerUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        // 🚨 IMPORTANTE: Remova o header 'Content-Type'. 
+        // O navegador irá configurá-lo automaticamente para 'multipart/form-data' 
+        // com o 'boundary' correto quando você passa um objeto FormData.
+        body: data, 
       })
 
-      const data = await res.json()
-      console.log("Resposta da API:", data)
+      const responseData = await res.json()
+      console.log("Resposta da API:", responseData)
 
-
-      if (data.success) {
+      if (responseData.success) {
         toast.success("Cadastro realizado com sucesso! Realize o login no sistema!")
+        // Limpar o formulário seria uma boa prática aqui
       } else {
-        toast.error("Erro ao realizar cadastro.")
+        // Usa a mensagem de erro da API se existir, senão uma genérica
+        toast.error(responseData.message || "Erro ao realizar cadastro.")
       }
     } catch (error) {
       console.error("Erro no cadastro:", error)
+      toast.error("Ocorreu um erro inesperado. Tente novamente.")
     } finally {
       setIsSubmitting(false);
     }
@@ -129,80 +158,56 @@ export default function PatientRegisterPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* ... (campos de Nome, Email, Telefone, etc. continuam iguais) ... */}
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo *</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      placeholder="Seu nome completo"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                    />
+                    <Input id="name" name="name" placeholder="Seu nome completo" value={formData.name} onChange={handleInputChange} required />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      placeholder="seu@email.com"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                    />
+                    <Input id="email" name="email" placeholder="seu@email.com" value={formData.email} onChange={handleInputChange} required />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone *</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      placeholder="(11) 99999-9999"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      required
-                    />
+                    <Input id="phone" name="phone" placeholder="(11) 99999-9999" value={formData.phone} onChange={handleInputChange} required />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="address">Endereço Completo *</Label>
-                    <Input
-                      id="address"
-                      name="address"
-                      placeholder="Rua, número, bairro, cidade - UF"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      required
-                    />
+                    <Input id="address" name="address" placeholder="Rua, número, bairro, cidade - UF" value={formData.address} onChange={handleInputChange} required />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="cpf">CPF *</Label>
-                    <Input
-                      id="cpf"
-                      name="cpf"
-                      placeholder="000.000.000-00"
-                      value={formData.cpf}
-                      onChange={handleInputChange}
-                      required
-                    />
+                    <Input id="cpf" name="cpf" placeholder="000.000.000-00" value={formData.cpf} onChange={handleInputChange} required />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="password">Senha *</Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Mínimo 8 caracteres"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                      minLength={8}
-                    />
+                    <Input id="password" name="password" type="password" placeholder="Mínimo 8 caracteres" value={formData.password} onChange={handleInputChange} required minLength={8} />
                   </div>
-
+                  
+                  {/* ✅ NOVO: Campo para upload da imagem de perfil */}
+                  <div className="space-y-2">
+                    <Label htmlFor="image_profile">Foto de Perfil (Opcional)</Label>
+                    <Input 
+                      id="image_profile" 
+                      name="image_profile" 
+                      type="file" 
+                      onChange={handleFileChange}
+                      accept="image/png, image/jpeg, image/jpg" // Ajuda o usuário a selecionar os arquivos certos
+                    />
+                    {/* Feedback visual para o usuário */}
+                    {profileImage && (
+                        <div className="text-sm text-muted-foreground flex items-center mt-2">
+                            <FileImage className="h-4 w-4 mr-2" />
+                            Arquivo selecionado: {profileImage.name}
+                        </div>
+                    )}
+                  </div>
+                  
                   <div className="pt-6 flex flex-col justify-center" >
                     <Button
                       type="submit"

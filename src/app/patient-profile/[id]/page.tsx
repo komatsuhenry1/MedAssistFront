@@ -5,10 +5,13 @@ import { useParams, useRouter } from "next/navigation"
 import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { User, Mail, Phone, MapPin, Calendar, Shield, CreditCard, Clock } from "lucide-react"
 
+// ✅ NOVO: Constante para a URL base da API para manter o código limpo
+const API_BASE_URL = "http://localhost:8081/api/v1"
 interface PatientData {
     id: string
     name: string
@@ -21,6 +24,7 @@ interface PatientData {
     created_at: string
     updated_at: string
     hidden: boolean
+    profile_image_id: string
 }
 
 interface ApiResponse {
@@ -124,6 +128,10 @@ export default function PatientProfile() {
         )
     }
 
+    const imageUrl = patient?.profile_image_id
+        ? `${API_BASE_URL}/user/file/${patient.profile_image_id}`
+        : "/placeholder-avatar.png"
+
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
             <Header />
@@ -143,28 +151,25 @@ export default function PatientProfile() {
                     <div>
                         <Card>
                             <CardContent style={{ padding: "2rem", textAlign: "center" }}>
-                                {/* Avatar with initials */}
+                                {/* 🔄 ALTERADO: Substituímos o DIV de iniciais pelo componente de Imagem */}
                                 <div
                                     style={{
+                                        position: "relative",
                                         width: "150px",
                                         height: "150px",
                                         borderRadius: "50%",
-                                        backgroundColor: "#15803d",
-                                        color: "white",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        fontSize: "3rem",
-                                        fontWeight: "bold",
+                                        overflow: "hidden", // Importante para a imagem não vazar da borda arredondada
                                         margin: "0 auto 1rem",
+                                        backgroundColor: "#e5e7eb", // Cor de fundo caso a imagem demore a carregar
                                     }}
                                 >
-                                    {patient.name
-                                        .split(" ")
-                                        .map((n) => n[0])
-                                        .slice(0, 2)
-                                        .join("")
-                                        .toUpperCase()}
+                                    <Image
+                                        src={imageUrl}
+                                        alt={`Foto de perfil de ${patient.name}`}
+                                        fill
+                                        style={{ objectFit: "cover" }}
+                                        priority // Opcional: prioriza o carregamento desta imagem
+                                    />
                                 </div>
 
                                 <h1 style={{ fontSize: "1.75rem", fontWeight: "bold", marginBottom: "0.5rem", color: "#1f2937" }}>
@@ -175,6 +180,7 @@ export default function PatientProfile() {
                                     Paciente
                                 </p>
 
+                                {/* ... (o resto do seu JSX continua exatamente igual) ... */}
                                 <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginBottom: "1.5rem" }}>
                                     <Badge
                                         variant={patient.hidden ? "secondary" : "default"}
@@ -202,15 +208,9 @@ export default function PatientProfile() {
                                         {formatDate(patient.created_at)}
                                     </div>
                                 </div>
-
-                                <Button
-                                    style={{ backgroundColor: "#15803d", color: "white", width: "100%", marginTop: "1rem" }}
-                                    onClick={() => toast.info("Funcionalidade em desenvolvimento")}
-                                >
-                                    Enviar Mensagem
-                                </Button>
                             </CardContent>
                         </Card>
+
                     </div>
 
                     {/* Right Column - Details */}

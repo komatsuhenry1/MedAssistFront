@@ -326,7 +326,7 @@ export default function PatientVisitsPage() {
                                 variant="outline"
                                 onClick={() => {
                                     if (selectedVisit) {
-                                        window.location.href = `/nurse-profile/${selectedVisit.nurse.id}`
+                                        window.location.href = `/visit/nurses-list/${selectedVisit.nurse.id}`
                                     }
                                 }}
                             >

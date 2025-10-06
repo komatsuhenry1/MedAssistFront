@@ -1,8 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-// import Link from "next/link" // Removido para compatibilidade
-// import Image from "next/image" // Removido para compatibilidade
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -17,15 +15,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Menu, LogOut, User, UserPlus, Bell } from "lucide-react"
 
-// Interface atualizada para incluir a foto de perfil (opcional)
+// Constante para a URL base da API
+const API_BASE_URL = "http://localhost:8081/api/v1"
+
+// Interface atualizada para esperar o ID da imagem
 interface UserData {
   name: string
   email: string
-  role: "PATIENT" | "NURSE" | "ADMIN"// Usando tipos literais para mais segurança
+  role: "PATIENT" | "NURSE" | "ADMIN"
   id: string
-  profilePictureUrl?: string // Campo para a foto de perfil
+  profile_image_id?: string // Esperamos o ID da imagem, que vem do localStorage
 }
-
 
 export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -36,11 +36,6 @@ export function Header() {
     const token = localStorage.getItem("token")
     if (token) {
       setIsAuthenticated(true)
-
-      // --- MUDANÇA PRINCIPAL AQUI ---
-      // Corrigido para ler o objeto "user" completo do localStorage,
-      // em vez de apenas a "role". O componente precisa do objeto
-      // inteiro para obter o nome, email, e a role.
       const storedUser = localStorage.getItem("user")
       if (storedUser) {
         try {
@@ -53,11 +48,8 @@ export function Header() {
     }
   }, [])
 
-
-
   const handleLogout = () => {
     localStorage.removeItem("token")
-    // Corrigido para remover "user" no logout
     localStorage.removeItem("user")
     setIsAuthenticated(false)
     setUserData(null)
@@ -96,7 +88,6 @@ export function Header() {
       return baseLinks
     }
 
-    // Esta lógica agora funcionará corretamente, pois userData é o objeto completo.
     switch (userData?.role) {
       case "PATIENT":
         return (
@@ -134,20 +125,33 @@ export function Header() {
     }
   }
 
+  const avatarUrl = userData?.profile_image_id
+    ? `${API_BASE_URL}/user/file/${userData.profile_image_id}`
+    : undefined
+
+  // Lógica para criar a URL do perfil dinamicamente
+  let profileUrl = "#" // URL padrão segura
+  if (userData) {
+    switch (userData.role) {
+      case "PATIENT":
+        profileUrl = `/patient-profile/${userData.id}`
+        break
+      case "NURSE":
+        profileUrl = `/visit/nurses-list/${userData.id}`
+        break
+      default:
+        profileUrl = `/profile/${userData.id}` // Um fallback genérico
+        break
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container flex h-16 items-center justify-between">
         {/* LOGO */}
         <div className="flex items-center space-x-2">
-          {/* Componente <Image> substituído por <img> */}
           <a href="/" className="flex items-center space-x-2">
-            <img
-              src="/logo.png"
-              alt="CareConnect Logo"
-              width={40}
-              height={40}
-              className="object-cover"
-            />
+            <img src="/logo.png" alt="CareConnect Logo" width={40} height={40} className="object-cover" />
             <span className="text-lg font-semibold hidden sm:block text-[#15803d]">Vita</span>
           </a>
         </div>
@@ -187,9 +191,7 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
                     <Avatar className="h-8 w-8">
-                      {userData?.profilePictureUrl && (
-                        <AvatarImage src={userData.profilePictureUrl} alt={userData.name} />
-                      )}
+                      {avatarUrl && <AvatarImage src={avatarUrl} alt={userData?.name} />}
                       <AvatarFallback className="bg-[#15803d] text-white">
                         {userData ? getInitials(userData.name) : "U"}
                       </AvatarFallback>
@@ -205,15 +207,10 @@ export function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
-                    {userData ? (
-                      <a
-                        href={`/patient-profile/${userData.id}`}
-                        className="cursor-pointer flex items-center"
-                      >
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Meu Perfil</span>
-                      </a>
-                    ) : null}
+                    <a href={profileUrl} className="cursor-pointer flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Meu Perfil</span>
+                    </a>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <a href="/notifications" className="cursor-pointer flex items-center">
@@ -279,9 +276,7 @@ export function Header() {
                 {isAuthenticated && userData && (
                   <div className="flex items-center gap-3 pb-4 border-b">
                     <Avatar className="h-10 w-10">
-                      {userData?.profilePictureUrl && (
-                        <AvatarImage src={userData.profilePictureUrl} alt={userData.name} />
-                      )}
+                      {avatarUrl && <AvatarImage src={avatarUrl} alt={userData.name} />}
                       <AvatarFallback className="bg-[#15803d] text-white">{getInitials(userData.name)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
@@ -298,7 +293,7 @@ export function Header() {
                 <div className="flex flex-col gap-2 pt-4 border-t">
                   {isAuthenticated ? (
                     <>
-                      <a href="/profile">
+                      <a href={profileUrl}>
                         <Button variant="ghost" size="sm" className="justify-start w-full">
                           <User className="h-4 w-4 mr-2" />
                           Meu Perfil
@@ -354,4 +349,3 @@ export function Header() {
     </header>
   )
 }
-
