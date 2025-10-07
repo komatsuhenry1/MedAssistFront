@@ -118,6 +118,9 @@ export function Header() {
             <a href="/dashboard/admin" className="text-sm font-medium hover:text-primary transition-colors">
               Dashboard
             </a>
+            <a href="/users-manegement" className="text-sm font-medium hover:text-primary transition-colors">
+              Painel Administrativo
+            </a>
           </>
         )
       default:
