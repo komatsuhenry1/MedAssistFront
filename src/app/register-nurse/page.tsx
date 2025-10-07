@@ -86,7 +86,7 @@ export default function RegisterPage() {
     general_register: null as File | null,
     residence_comprovant: null as File | null,
     license_document: null as File | null,
-    face_image: null as File | null,
+    profile_image: null as File | null,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -364,7 +364,7 @@ export default function RegisterPage() {
                     <DocumentInput label="Registro Geral (RG) *" field="general_register" file={formData.general_register} onFileChange={handleFileChange} onOpenCamera={handleOpenCamera} />
                     <DocumentInput label="Comprovante de Residência *" field="residence_comprovant" file={formData.residence_comprovant} onFileChange={handleFileChange} onOpenCamera={handleOpenCamera} />
                     <DocumentInput label="Registro Profissional (COREN) *" field="license_document" file={formData.license_document} onFileChange={handleFileChange} onOpenCamera={handleOpenCamera} />
-                    <DocumentInput label="Foto de Perfil *" field="face_image" file={formData.face_image} onFileChange={handleFileChange} onOpenCamera={handleOpenCamera} />
+                    <DocumentInput label="Foto de Perfil *" field="profile_image" file={formData.profile_image} onFileChange={handleFileChange} onOpenCamera={handleOpenCamera} />
                   </div>
 
                   <div className="pt-6 flex flex-col justify-center">

@@ -172,7 +172,8 @@ export function Header() {
                     {notificationsCount > 0 && (
                       <Badge
                         variant="destructive"
-                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0
+                         text-xs"
                       >
                         {notificationsCount}
                       </Badge>
@@ -190,7 +191,8 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
-                    <Avatar className="h-8 w-8">
+                    {/* ✅ ALTERADO AQUI: Aumentado o tamanho do Avatar para 40x40px (h-10 w-10) */}
+                    <Avatar className="h-10 w-10">
                       {avatarUrl && <AvatarImage src={avatarUrl} alt={userData?.name} />}
                       <AvatarFallback className="bg-[#15803d] text-white">
                         {userData ? getInitials(userData.name) : "U"}
@@ -275,6 +277,7 @@ export function Header() {
               <div className="flex flex-col gap-6 mt-8">
                 {isAuthenticated && userData && (
                   <div className="flex items-center gap-3 pb-4 border-b">
+                    {/* O Avatar no mobile já estava com h-10 w-10 */}
                     <Avatar className="h-10 w-10">
                       {avatarUrl && <AvatarImage src={avatarUrl} alt={userData.name} />}
                       <AvatarFallback className="bg-[#15803d] text-white">{getInitials(userData.name)}</AvatarFallback>
