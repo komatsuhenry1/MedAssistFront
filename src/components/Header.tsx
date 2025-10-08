@@ -137,7 +137,7 @@ export function Header() {
   if (userData) {
     switch (userData.role) {
       case "PATIENT":
-        profileUrl = `/patient-profile/${userData.id}`
+        profileUrl = `/patient/my-profile`
         break
       case "NURSE":
         profileUrl = `/visit/nurses-list/${userData.id}`
