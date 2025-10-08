@@ -148,7 +148,7 @@ export default function LoginPage() {
 
                 <div style={{ textAlign: "right" }}>
                   <Link
-                    href="/forgot-password"
+                    href="/auth/two-factor"
                     style={{
                       color: "#15803d",
                       textDecoration: "none",

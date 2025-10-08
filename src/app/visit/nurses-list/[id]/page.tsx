@@ -157,7 +157,7 @@ export default function NurseProfile() {
             const result = await response.json()
 
             if (response.ok && result.success) {
-                toast.success("Consulta agendada com sucesso!")
+                toast.success("Consulta solicitada com sucesso!")
                 setBookingSuccess(true)
                 setBookingError(null)
 

@@ -27,11 +27,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, Users, UserCog, Edit, Trash2, Mail, Phone } from "lucide-react"
+import { Loader2, Users, UserCog, Edit, Trash2, Mail, Phone, Calendar } from "lucide-react"
+import { toast } from "sonner"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "sonner"
- 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8081/api/v1"
 
 interface User {
@@ -72,9 +73,26 @@ interface Nurse {
     end_time: string
 }
 
+interface Visit {
+    id: string
+    status: string
+    patient_id: string
+    patient_name: string
+    patient_email: string
+    description: string
+    reason: string
+    cancel_reason: string
+    nurse_id: string
+    nurse_name: string
+    value: number
+    visit_type: string
+    visit_date: string
+}
+
 interface AdminData {
     users: User[]
     nurses: Nurse[]
+    visits: Visit[]
 }
 
 interface ApiResponse {
@@ -90,13 +108,14 @@ export default function AdminUsersPage() {
 
     // Edit dialog states
     const [showEditDialog, setShowEditDialog] = useState(false)
-    const [editingUser, setEditingUser] = useState<User | Nurse | null>(null)
-    const [editingType, setEditingType] = useState<"user" | "nurse">("user")
+    const [editingUser, setEditingUser] = useState<User | Nurse | Visit | null>(null)
+    const [editingType, setEditingType] = useState<"user" | "nurse" | "visit">("user")
     const [isUpdating, setIsUpdating] = useState(false)
 
     // Delete dialog states
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [deletingId, setDeletingId] = useState<string | null>(null)
+    const [deletingType, setDeletingType] = useState<"user" | "nurse" | "visit">("user")
     const [isDeleting, setIsDeleting] = useState(false)
 
     const [editForm, setEditForm] = useState<any>({
@@ -141,15 +160,31 @@ export default function AdminUsersPage() {
         }
     }
 
-    const openEditDialog = (user: User | Nurse, type: "user" | "nurse") => {
-        console.log("[v0] Opening edit dialog for user:", user)
-        console.log("[v0] User ID:", user.id)
+    const openEditDialog = (item: User | Nurse | Visit, type: "user" | "nurse" | "visit") => {
+        console.log("[v0] Opening edit dialog for:", type, item)
+        console.log("[v0] Item ID:", item.id)
 
-        setEditingUser(user)
+        setEditingUser(item)
         setEditingType(type)
 
-        if (type === "nurse") {
-            const nurse = user as Nurse
+        if (type === "visit") {
+            const visit = item as Visit
+            setEditForm({
+                status: visit.status,
+                patient_id: visit.patient_id,
+                patient_name: visit.patient_name,
+                patient_email: visit.patient_email,
+                description: visit.description,
+                reason: visit.reason,
+                cancel_reason: visit.cancel_reason,
+                nurse_id: visit.nurse_id,
+                nurse_name: visit.nurse_name,
+                value: visit.value,
+                visit_type: visit.visit_type,
+                visit_date: visit.visit_date,
+            })
+        } else if (type === "nurse") {
+            const nurse = item as Nurse
             setEditForm({
                 name: nurse.name,
                 email: nurse.email,
@@ -157,7 +192,7 @@ export default function AdminUsersPage() {
                 address: nurse.address,
                 cpf: nurse.cpf,
                 pix_key: nurse.pix_key,
-                password: "", // Set password to empty string instead of nurse.password
+                password: "",
                 verification_seal: nurse.verification_seal,
                 license_number: nurse.license_number,
                 specialization: nurse.specialization,
@@ -172,14 +207,14 @@ export default function AdminUsersPage() {
                 end_time: nurse.end_time,
             })
         } else {
-            const patient = user as User
+            const patient = item as User
             setEditForm({
                 name: patient.name,
                 email: patient.email,
                 phone: patient.phone,
                 address: patient.address,
                 cpf: patient.cpf,
-                password: "", // Set password to empty string instead of patient.password
+                password: "",
                 hidden: patient.hidden,
                 first_access: patient.first_access,
             })
@@ -196,12 +231,17 @@ export default function AdminUsersPage() {
             delete updateData.password
         }
 
-        console.log("[v0] Updating user with ID:", editingUser.id)
+        console.log("[v0] Updating item with ID:", editingUser.id)
         console.log("[v0] Update data:", updateData)
+
+        const endpoint =
+            editingType === "visit"
+                ? `${API_BASE_URL}/admin/visit/${editingUser.id}`
+                : `${API_BASE_URL}/admin/user/${editingUser.id}`
 
         setIsUpdating(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/admin/user/${editingUser.id}`, {
+            const response = await fetch(endpoint, {
                 method: "PATCH",
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -211,37 +251,44 @@ export default function AdminUsersPage() {
             })
 
             if (!response.ok) {
-                throw new Error("Erro ao atualizar usuário")
+                throw new Error(`Erro ao atualizar ${editingType === "visit" ? "visita" : "usuário"}`)
             }
 
             const apiResponse: ApiResponse = await response.json()
 
             if (apiResponse.success) {
                 await fetchAdminData()
-                toast.success("Usuário atualizado com sucesso")
+                toast.success("Usuário atualizado com sucesso!")
                 setShowEditDialog(false)
                 setEditingUser(null)
             } else {
-                throw new Error(apiResponse.message || "Erro ao atualizar usuário")
+                throw new Error(apiResponse.message || "Erro ao atualizar")
             }
         } catch (err) {
-            toast.success("Erro ao atualizar usuário")
+            toast.error("erro ao atualizar")
         } finally {
             setIsUpdating(false)
         }
     }
 
-    const openDeleteDialog = (id: string) => {
+    const openDeleteDialog = (id: string, type: "user" | "nurse" | "visit") => {
         setDeletingId(id)
+        setDeletingType(type)
         setShowDeleteDialog(true)
     }
 
+    // A função handleDelete foi corrigida aqui
     const handleDelete = async () => {
         if (!deletingId) return
 
+        const endpoint =
+            deletingType === "visit"
+                ? `${API_BASE_URL}/admin/visit/${deletingId}`
+                : `${API_BASE_URL}/admin/user/${deletingId}`
+
         setIsDeleting(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/admin/user/${deletingId}`, {
+            const response = await fetch(endpoint, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -249,18 +296,18 @@ export default function AdminUsersPage() {
             })
 
             if (!response.ok) {
-                throw new Error("Erro ao excluir usuário")
+                throw new Error(`Erro ao excluir ${deletingType === "visit" ? "visita" : "usuário"}`)
             }
 
             const apiResponse: ApiResponse = await response.json()
-            if (apiResponse.success && apiResponse.data) {
-                setAdminData(apiResponse.data)
-                toast.success("Usuário excluído com sucesso")
+            if (apiResponse.success) {
+                toast.success("Item excluído com sucesso!")
+                fetchAdminData() // Busca os dados atualizados do servidor
             } else {
                 throw new Error(apiResponse.message || "Erro ao excluir")
             }
         } catch (err) {
-            toast.error("Erro ao excluir usuário")
+            toast.error(err instanceof Error ? err.message : "Erro ao excluir item.")
         } finally {
             setIsDeleting(false)
             setShowDeleteDialog(false)
@@ -271,8 +318,26 @@ export default function AdminUsersPage() {
     const handleDeleteFromDialog = () => {
         if (editingUser) {
             setShowEditDialog(false)
-            openDeleteDialog(editingUser.id)
+            openDeleteDialog(editingUser.id, editingType)
         }
+    }
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString)
+        return date.toLocaleString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        })
+    }
+
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+        }).format(value)
     }
 
     if (isLoading) {
@@ -330,21 +395,25 @@ export default function AdminUsersPage() {
             >
                 <div style={{ maxWidth: "1200px", margin: "0 auto", textAlign: "center" }}>
                     <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Gerenciamento de Usuários</h1>
-                    <p style={{ fontSize: "1.25rem", opacity: 0.9 }}>Administre usuários e enfermeiros da plataforma</p>
+                    <p style={{ fontSize: "1.25rem", opacity: 0.9 }}>Administre usuários, enfermeiros e visitas da plataforma</p>
                 </div>
             </section>
 
             {/* Content Section */}
             <section style={{ padding: "3rem 1rem", maxWidth: "1200px", margin: "0 auto" }}>
                 <Tabs defaultValue="users" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsList className="grid w-full grid-cols-3 mb-6">
                         <TabsTrigger value="users" className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
-                            Usuários ({adminData?.users.length || 0})
+                            Usuários ({adminData?.users?.length || 0})
                         </TabsTrigger>
                         <TabsTrigger value="nurses" className="flex items-center gap-2">
                             <UserCog className="h-4 w-4" />
-                            Enfermeiros ({adminData?.nurses.length || 0})
+                            Enfermeiros ({adminData?.nurses?.length || 0})
+                        </TabsTrigger>
+                        <TabsTrigger value="visits" className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            Visitas ({adminData?.visits?.length || 0})
                         </TabsTrigger>
                     </TabsList>
 
@@ -356,7 +425,7 @@ export default function AdminUsersPage() {
                                 <CardDescription>Gerencie os usuários cadastrados na plataforma</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {adminData?.users.length === 0 ? (
+                                {adminData?.users?.length === 0 ? (
                                     <div style={{ textAlign: "center", padding: "3rem", color: "#6b7280" }}>
                                         <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                         <p>Nenhum usuário cadastrado</p>
@@ -373,7 +442,7 @@ export default function AdminUsersPage() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {adminData?.users.map((user) => (
+                                            {adminData?.users?.map((user) => (
                                                 <TableRow
                                                     key={user.id}
                                                     className="cursor-pointer hover:bg-muted/50"
@@ -400,7 +469,7 @@ export default function AdminUsersPage() {
                                                             <Button variant="outline" size="sm" onClick={() => openEditDialog(user, "user")}>
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                            <Button variant="destructive" size="sm" onClick={() => openDeleteDialog(user.id)}>
+                                                            <Button variant="destructive" size="sm" onClick={() => openDeleteDialog(user.id, "user")}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </div>
@@ -422,7 +491,7 @@ export default function AdminUsersPage() {
                                 <CardDescription>Gerencie os enfermeiros cadastrados na plataforma</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {adminData?.nurses.length === 0 ? (
+                                {adminData?.nurses?.length === 0 ? (
                                     <div style={{ textAlign: "center", padding: "3rem", color: "#6b7280" }}>
                                         <UserCog className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                         <p>Nenhum enfermeiro cadastrado</p>
@@ -439,7 +508,7 @@ export default function AdminUsersPage() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {adminData?.nurses.map((nurse) => (
+                                            {adminData?.nurses?.map((nurse) => (
                                                 <TableRow
                                                     key={nurse.id}
                                                     className="cursor-pointer hover:bg-muted/50"
@@ -466,7 +535,83 @@ export default function AdminUsersPage() {
                                                             <Button variant="outline" size="sm" onClick={() => openEditDialog(nurse, "nurse")}>
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                            <Button variant="destructive" size="sm" onClick={() => openDeleteDialog(nurse.id)}>
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={() => openDeleteDialog(nurse.id, "nurse")}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* Visits Tab */}
+                    <TabsContent value="visits">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Lista de Visitas</CardTitle>
+                                <CardDescription>Gerencie as visitas agendadas na plataforma</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {adminData?.visits?.length === 0 ? (
+                                    <div style={{ textAlign: "center", padding: "3rem", color: "#6b7280" }}>
+                                        <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                        <p>Nenhuma visita cadastrada</p>
+                                    </div>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Paciente</TableHead>
+                                                <TableHead>Enfermeiro</TableHead>
+                                                <TableHead>Data</TableHead>
+                                                <TableHead>Valor</TableHead>
+                                                <TableHead className="text-right">Ações</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {adminData?.visits?.map((visit) => (
+                                                <TableRow
+                                                    key={visit.id}
+                                                    className="cursor-pointer hover:bg-muted/50"
+                                                    onClick={() => openEditDialog(visit, "visit")}
+                                                >
+                                                    <TableCell>
+                                                        <Badge
+                                                            variant={
+                                                                visit.status === "CONFIRMED"
+                                                                    ? "default"
+                                                                    : visit.status === "PENDING"
+                                                                        ? "secondary"
+                                                                        : "outline"
+                                                            }
+                                                        >
+                                                            {visit.status}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="font-medium">{visit.patient_name}</TableCell>
+                                                    <TableCell>{visit.nurse_name}</TableCell>
+                                                    <TableCell>{formatDate(visit.visit_date)}</TableCell>
+                                                    <TableCell>{formatCurrency(visit.value)}</TableCell>
+                                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button variant="outline" size="sm" onClick={() => openEditDialog(visit, "visit")}>
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={() => openDeleteDialog(visit.id, "visit")}
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </div>
@@ -485,232 +630,347 @@ export default function AdminUsersPage() {
             <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Editar {editingType === "nurse" ? "Enfermeiro" : "Usuário"}</DialogTitle>
+                        <DialogTitle>
+                            Editar {editingType === "visit" ? "Visita" : editingType === "nurse" ? "Enfermeiro" : "Usuário"}
+                        </DialogTitle>
                         <DialogDescription>
-                            Atualize as informações do {editingType === "nurse" ? "enfermeiro" : "usuário"}
+                            Atualize as informações{" "}
+                            {editingType === "visit" ? "da visita" : `do ${editingType === "nurse" ? "enfermeiro" : "usuário"}`}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4">
-                        {/* Common fields for both users and nurses */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label htmlFor="edit-name">Nome</Label>
-                                <Input
-                                    id="edit-name"
-                                    value={editForm.name}
-                                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-email">Email</Label>
-                                <Input
-                                    id="edit-email"
-                                    type="email"
-                                    value={editForm.email}
-                                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label htmlFor="edit-phone">Telefone</Label>
-                                <Input
-                                    id="edit-phone"
-                                    value={editForm.phone}
-                                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-cpf">CPF</Label>
-                                <Input
-                                    id="edit-cpf"
-                                    value={editForm.cpf}
-                                    onChange={(e) => setEditForm({ ...editForm, cpf: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <Label htmlFor="edit-address">Endereço</Label>
-                            <Input
-                                id="edit-address"
-                                value={editForm.address}
-                                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                            />
-                        </div>
-
-                        <div>
-                            <Label htmlFor="edit-password">Senha (deixe em branco para não alterar)</Label>
-                            <Input
-                                id="edit-password"
-                                type="password"
-                                value={editForm.password}
-                                onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                                placeholder="Nova senha"
-                            />
-                        </div>
-
-                        {/* Nurse-specific fields */}
-                        {editingType === "nurse" && (
+                        {editingType === "visit" ? (
                             <>
-                                <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    strokeWidth={2}
-                                                    stroke="white"
-                                                    className="w-6 h-6"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 0121 12z"
-                                                    />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="edit-verification" className="text-base font-semibold text-green-900">
-                                                    Selo de Verificação
-                                                </Label>
-                                                <p className="text-sm text-green-700">
-                                                    Autorizar este enfermeiro como verificado na plataforma
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <Checkbox
-                                            id="edit-verification"
-                                            checked={editForm.verification_seal}
-                                            onCheckedChange={(checked) => setEditForm({ ...editForm, verification_seal: checked })}
-                                            className="h-6 w-6"
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="edit-status">Status</Label>
+                                        <Select
+                                            value={editForm.status}
+                                            onValueChange={(value) => setEditForm({ ...editForm, status: value })}
+                                        >
+                                            <SelectTrigger id="edit-status">
+                                                <SelectValue placeholder="Selecione o status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="PENDING">PENDING</SelectItem>
+                                                <SelectItem value="CONFIRMED">CONFIRMED</SelectItem>
+                                                <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                                                <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="edit-visit-type">Tipo de Visita</Label>
+                                        <Select
+                                            value={editForm.visit_type}
+                                            onValueChange={(value) => setEditForm({ ...editForm, visit_type: value })}
+                                        >
+                                            <SelectTrigger id="edit-visit-type">
+                                                <SelectValue placeholder="Selecione o tipo" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="domiciliar">Domiciliar</SelectItem>
+                                                <SelectItem value="hospital">Hospital</SelectItem>
+                                                <SelectItem value="clinica">Clínica</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="edit-patient-name">Nome do Paciente</Label>
+                                        <Input
+                                            id="edit-patient-name"
+                                            value={editForm.patient_name}
+                                            onChange={(e) => setEditForm({ ...editForm, patient_name: e.target.value })}
+                                            disabled
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="edit-nurse-name">Nome do Enfermeiro</Label>
+                                        <Input
+                                            id="edit-nurse-name"
+                                            value={editForm.nurse_name}
+                                            onChange={(e) => setEditForm({ ...editForm, nurse_name: e.target.value })}
+                                            disabled
                                         />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <Label htmlFor="edit-license">COREN</Label>
+                                        <Label htmlFor="edit-visit-date">Data da Visita</Label>
                                         <Input
-                                            id="edit-license"
-                                            value={editForm.license_number}
-                                            onChange={(e) => setEditForm({ ...editForm, license_number: e.target.value })}
+                                            id="edit-visit-date"
+                                            type="datetime-local"
+                                            value={editForm.visit_date ? new Date(editForm.visit_date).toISOString().slice(0, 16) : ""}
+                                            onChange={(e) => setEditForm({ ...editForm, visit_date: new Date(e.target.value).toISOString() })}
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="edit-specialization">Especialização</Label>
+                                        <Label htmlFor="edit-value">Valor</Label>
                                         <Input
-                                            id="edit-specialization"
-                                            value={editForm.specialization}
-                                            onChange={(e) => setEditForm({ ...editForm, specialization: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="edit-shift">Turno</Label>
-                                        <Input
-                                            id="edit-shift"
-                                            value={editForm.shift}
-                                            onChange={(e) => setEditForm({ ...editForm, shift: e.target.value })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-department">Departamento</Label>
-                                        <Input
-                                            id="edit-department"
-                                            value={editForm.department}
-                                            onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div>
-                                        <Label htmlFor="edit-experience">Anos de Experiência</Label>
-                                        <Input
-                                            id="edit-experience"
+                                            id="edit-value"
                                             type="number"
-                                            value={editForm.years_experience}
-                                            onChange={(e) =>
-                                                setEditForm({ ...editForm, years_experience: Number.parseInt(e.target.value) || 0 })
-                                            }
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-price">Preço</Label>
-                                        <Input
-                                            id="edit-price"
-                                            type="number"
-                                            value={editForm.price}
-                                            onChange={(e) => setEditForm({ ...editForm, price: Number.parseFloat(e.target.value) || 0 })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-pix">Chave PIX</Label>
-                                        <Input
-                                            id="edit-pix"
-                                            value={editForm.pix_key}
-                                            onChange={(e) => setEditForm({ ...editForm, pix_key: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="edit-start-time">Horário Início</Label>
-                                        <Input
-                                            id="edit-start-time"
-                                            value={editForm.start_time}
-                                            onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-end-time">Horário Fim</Label>
-                                        <Input
-                                            id="edit-end-time"
-                                            value={editForm.end_time}
-                                            onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
+                                            value={editForm.value}
+                                            onChange={(e) => setEditForm({ ...editForm, value: Number.parseFloat(e.target.value) || 0 })}
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="edit-bio">Biografia</Label>
+                                    <Label htmlFor="edit-description">Descrição</Label>
                                     <Textarea
-                                        id="edit-bio"
-                                        value={editForm.bio}
-                                        onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                                        id="edit-description"
+                                        value={editForm.description}
+                                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                                         rows={3}
                                     />
                                 </div>
+
+                                <div>
+                                    <Label htmlFor="edit-reason">Motivo</Label>
+                                    <Textarea
+                                        id="edit-reason"
+                                        value={editForm.reason}
+                                        onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })}
+                                        rows={2}
+                                    />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="edit-cancel-reason">Motivo do Cancelamento</Label>
+                                    <Textarea
+                                        id="edit-cancel-reason"
+                                        value={editForm.cancel_reason}
+                                        onChange={(e) => setEditForm({ ...editForm, cancel_reason: e.target.value })}
+                                        rows={2}
+                                        placeholder="Deixe em branco se não cancelado"
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="edit-name">Nome</Label>
+                                        <Input
+                                            id="edit-name"
+                                            value={editForm.name}
+                                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="edit-email">Email</Label>
+                                        <Input
+                                            id="edit-email"
+                                            type="email"
+                                            value={editForm.email}
+                                            onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="edit-phone">Telefone</Label>
+                                        <Input
+                                            id="edit-phone"
+                                            value={editForm.phone}
+                                            onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="edit-cpf">CPF</Label>
+                                        <Input
+                                            id="edit-cpf"
+                                            value={editForm.cpf}
+                                            onChange={(e) => setEditForm({ ...editForm, cpf: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="edit-address">Endereço</Label>
+                                    <Input
+                                        id="edit-address"
+                                        value={editForm.address}
+                                        onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                                    />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="edit-password">Senha (deixe em branco para não alterar)</Label>
+                                    <Input
+                                        id="edit-password"
+                                        type="password"
+                                        value={editForm.password}
+                                        onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                                        placeholder="Digite uma nova senha ou deixe em branco"
+                                    />
+                                </div>
+
+                                {editingType === "nurse" && (
+                                    <>
+                                        <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            strokeWidth={2}
+                                                            stroke="white"
+                                                            className="w-6 h-6"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 0121 12z"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="edit-verification" className="text-base font-semibold text-green-900">
+                                                            Selo de Verificação
+                                                        </Label>
+                                                        <p className="text-sm text-green-700">
+                                                            Autorizar este enfermeiro como verificado na plataforma
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <Checkbox
+                                                    id="edit-verification"
+                                                    checked={editForm.verification_seal}
+                                                    onCheckedChange={(checked) => setEditForm({ ...editForm, verification_seal: checked })}
+                                                    className="h-6 w-6"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="edit-license">COREN</Label>
+                                                <Input
+                                                    id="edit-license"
+                                                    value={editForm.license_number}
+                                                    onChange={(e) => setEditForm({ ...editForm, license_number: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="edit-specialization">Especialização</Label>
+                                                <Input
+                                                    id="edit-specialization"
+                                                    value={editForm.specialization}
+                                                    onChange={(e) => setEditForm({ ...editForm, specialization: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="edit-shift">Turno</Label>
+                                                <Input
+                                                    id="edit-shift"
+                                                    value={editForm.shift}
+                                                    onChange={(e) => setEditForm({ ...editForm, shift: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="edit-department">Departamento</Label>
+                                                <Input
+                                                    id="edit-department"
+                                                    value={editForm.department}
+                                                    onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div>
+                                                <Label htmlFor="edit-experience">Anos de Experiência</Label>
+                                                <Input
+                                                    id="edit-experience"
+                                                    type="number"
+                                                    value={editForm.years_experience}
+                                                    onChange={(e) =>
+                                                        setEditForm({ ...editForm, years_experience: Number.parseInt(e.target.value) || 0 })
+                                                    }
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="edit-price">Preço</Label>
+                                                <Input
+                                                    id="edit-price"
+                                                    type="number"
+                                                    value={editForm.price}
+                                                    onChange={(e) => setEditForm({ ...editForm, price: Number.parseFloat(e.target.value) || 0 })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="edit-pix">Chave PIX</Label>
+                                                <Input
+                                                    id="edit-pix"
+                                                    value={editForm.pix_key}
+                                                    onChange={(e) => setEditForm({ ...editForm, pix_key: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="edit-start-time">Horário Início</Label>
+                                                <Input
+                                                    id="edit-start-time"
+                                                    value={editForm.start_time}
+                                                    onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="edit-end-time">Horário Fim</Label>
+                                                <Input
+                                                    id="edit-end-time"
+                                                    value={editForm.end_time}
+                                                    onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="edit-bio">Biografia</Label>
+                                            <Textarea
+                                                id="edit-bio"
+                                                value={editForm.bio}
+                                                onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                                                rows={3}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="flex items-center space-x-4">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="edit-hidden"
+                                            checked={editForm.hidden}
+                                            onCheckedChange={(checked) => setEditForm({ ...editForm, hidden: checked })}
+                                        />
+                                        <Label htmlFor="edit-hidden">Oculto</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="edit-first-access"
+                                            checked={editForm.first_access}
+                                            onCheckedChange={(checked) => setEditForm({ ...editForm, first_access: checked })}
+                                        />
+                                        <Label htmlFor="edit-first-access">Primeiro Acesso</Label>
+                                    </div>
+                                </div>
                             </>
                         )}
-
-                        {/* Common checkboxes */}
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="edit-hidden"
-                                    checked={editForm.hidden}
-                                    onCheckedChange={(checked) => setEditForm({ ...editForm, hidden: checked })}
-                                />
-                                <Label htmlFor="edit-hidden">Oculto</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="edit-first-access"
-                                    checked={editForm.first_access}
-                                    onCheckedChange={(checked) => setEditForm({ ...editForm, first_access: checked })}
-                                />
-                                <Label htmlFor="edit-first-access">Primeiro Acesso</Label>
-                            </div>
-                        </div>
                     </div>
 
                     <DialogFooter className="flex justify-between">
@@ -747,7 +1007,8 @@ export default function AdminUsersPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
+                            Tem certeza que deseja excluir este {deletingType === "visit" ? "item" : "usuário"}? Esta ação não pode
+                            ser desfeita.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
