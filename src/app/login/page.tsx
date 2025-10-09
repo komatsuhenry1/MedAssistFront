@@ -55,10 +55,18 @@ export default function LoginPage() {
 
         // A lógica de redirecionamento permanece a mesma
         if (user.role === "NURSE") {
+          if(data.data.user.two_factor){
+            router.push("/auth/two-factor")
+            return
+          }
           router.push("/dashboard/nurse")
         } else if (user.role === "ADMIN") {
           router.push("/dashboard/admin")
         } else if (user.role === "PATIENT") {
+          if(data.data.user.two_factor){
+            router.push("/auth/two-factor")
+            return
+          }
           router.push("/visit/nurses-list") // Rota ajustada como no Header
         } else {
           router.push("/")
@@ -78,7 +86,6 @@ export default function LoginPage() {
     <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
       <Header />
 
-      {/* Hero Section */}
       <section
         style={{
           background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
