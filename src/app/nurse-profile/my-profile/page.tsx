@@ -3,16 +3,17 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/Header"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
+import { User, Bell, Lock, Loader2, Eye, History, Save, KeyRound, Trash2, Shield, Calendar } from "lucide-react"
 import { toast } from "sonner"
-import { User, Calendar, Shield, Save, Lock, Bell, Eye, History, KeyRound, Trash2 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -25,41 +26,46 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-interface PatientData {
+interface NurseProfile {
     id: string
     name: string
     email: string
     phone: string
     address: string
-    cpf: string
-    role: string
-    first_access: boolean
-    created_at: string
-    updated_at: string
-    hidden: boolean
+    license_number: string
+    years_experience: number
+    department: string
+    bio: string
+    specialization: string
+    created_at?: string
+    updated_at?: string
+    hidden?: boolean
     profile_image_id?: string
+    experience?: number
+    location?: string
 }
 
-interface ApiResponse {
-    data: PatientData
-    message: string
-    success: boolean
-}
-
-export default function MyProfile() {
+export default function NurseMyProfile() {
     const router = useRouter()
-    const [patient, setPatient] = useState<PatientData | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
+    const [nurseData, setNurseData] = useState<NurseProfile | null>(null)
     const [activeTab, setActiveTab] = useState("profile")
 
-    const [editForm, setEditForm] = useState({
+    // Profile form state
+    const [profileForm, setProfileForm] = useState({
         name: "",
         email: "",
         phone: "",
         address: "",
+        license_number: "",
+        years_experience: 0,
+        department: "",
+        bio: "",
+        specialization: "",
     })
 
+    // Security form state
     const [securityForm, setSecurityForm] = useState({
         currentPassword: "",
         newPassword: "",
@@ -67,103 +73,124 @@ export default function MyProfile() {
         twoFactorEnabled: false,
     })
 
-    const [notificationPrefs, setNotificationPrefs] = useState({
+    // Notifications form state
+    const [notificationsForm, setNotificationsForm] = useState({
         emailNotifications: true,
         smsNotifications: false,
         appointmentReminders: true,
-        promotionalEmails: false,
+        marketingEmails: false,
     })
 
-    const [privacySettings, setPrivacySettings] = useState({
-        profileVisible: true,
+    // Privacy form state
+    const [privacyForm, setPrivacyForm] = useState({
+        profileVisibility: true,
         showEmail: false,
-        showPhone: false,
+        showPhone: true,
     })
 
     useEffect(() => {
-        const fetchPatientData = async () => {
+        const fetchNurseProfile = async () => {
             try {
-                setLoading(true)
-                const storedUser = localStorage.getItem("user")
-                if (!storedUser) {
-                    toast.error("Usuário não encontrado. Faça login novamente.")
+                const token = localStorage.getItem("token")
+                const user = JSON.parse(localStorage.getItem("user") || "{}")
+
+                if (!user.id) {
+                    toast.error("Sessão inválida. Por favor, faça login novamente.")
                     router.push("/login")
                     return
                 }
 
-                const user = JSON.parse(storedUser)
-                const patientId = user.id
-
-                const response = await fetch(`http://localhost:8081/api/v1/nurse/patient/${patientId}`, {
-                    method: "GET",
+                const response = await fetch(`http://localhost:8081/api/v1/user/nurse/${user.id}`, {
                     headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        Authorization: `Bearer ${token}`,
                     },
+                    cache: "no-store", // Prevent caching to always get fresh data
                 })
 
-                if (!response.ok) {
-                    throw new Error("Erro ao carregar perfil")
-                }
+                if (response.ok) {
+                    const result = await response.json()
+                    const data: NurseProfile = result.data
 
-                const result: ApiResponse = await response.json()
+                    console.log("[v0] Fetched nurse data:", data) // Debug log
 
-                if (result.success && result.data) {
-                    setPatient(result.data)
-                    setEditForm({
-                        name: result.data.name,
-                        email: result.data.email,
-                        phone: result.data.phone,
-                        address: result.data.address,
+                    setNurseData(data)
+
+                    setProfileForm({
+                        name: data.name || "",
+                        email: user.email || "", // Email from localStorage since API doesn't return it
+                        phone: data.phone || "", // Will be empty if API doesn't return it
+                        address: data.location || "", // Map 'location' from API to 'address' in form
+                        license_number: data.license_number || "", // Will be empty if API doesn't return it
+                        years_experience: data.experience || 0, // Map 'experience' from API to 'years_experience'
+                        department: data.department || "",
+                        bio: data.bio || "",
+                        specialization: data.specialization || "",
                     })
+
+                    console.log("[v0] Updated profile form:", profileForm) // Debug log
                 } else {
-                    throw new Error(result.message || "Erro ao carregar dados")
+                    toast.error("Erro ao carregar perfil")
                 }
-            } catch (err) {
-                toast.error(err instanceof Error ? err.message : "Erro ao carregar perfil")
+            } catch (error) {
+                console.error("Error fetching nurse profile:", error)
+                toast.error("Erro ao carregar perfil")
             } finally {
-                setLoading(false)
+                setIsLoading(false)
             }
         }
 
-        fetchPatientData()
-    }, [router])
+        fetchNurseProfile()
+    }, [router]) // Only depend on router to fetch once on mount
 
     const handleSaveProfile = async () => {
+        setIsSaving(true)
         try {
-            setIsSaving(true)
-
-            const response = await fetch("http://localhost:8081/api/v1/user/update", {
+            const token = localStorage.getItem("token")
+            const response = await fetch("http://localhost:8081/api/v1/nurse/update", {
                 method: "PATCH",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
-                body: JSON.stringify(editForm),
+                body: JSON.stringify({
+                    name: profileForm.name,
+                    email: profileForm.email,
+                    phone: profileForm.phone,
+                    address: profileForm.address,
+                    license_number: profileForm.license_number,
+                    years_experience: profileForm.years_experience,
+                    department: profileForm.department,
+                    bio: profileForm.bio,
+                    specialization: profileForm.specialization,
+                }),
             })
 
-            const result = await response.json()
-
-            if (response.ok && result.success) {
+            if (response.ok) {
+                const result = await response.json()
                 toast.success(result.message || "Perfil atualizado com sucesso!")
 
-                if (patient) {
-                    setPatient({
-                        ...patient,
-                        ...editForm,
-                    })
-                }
+                const user = JSON.parse(localStorage.getItem("user") || "{}")
+                user.name = profileForm.name
+                user.email = profileForm.email
+                localStorage.setItem("user", JSON.stringify(user))
 
-                const storedUser = localStorage.getItem("user")
-                if (storedUser) {
-                    const user = JSON.parse(storedUser)
-                    localStorage.setItem("user", JSON.stringify({ ...user, ...editForm }))
+                const updatedResponse = await fetch(`http://localhost:8081/api/v1/user/nurse/${user.id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    cache: "no-store",
+                })
+
+                if (updatedResponse.ok) {
+                    const updatedResult = await updatedResponse.json()
+                    setNurseData(updatedResult.data)
                 }
             } else {
-                throw new Error(result.message || "Erro ao atualizar perfil")
+                toast.error("Erro ao atualizar perfil")
             }
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Erro ao atualizar perfil")
+        } catch (error) {
+            console.error("Error updating profile:", error)
+            toast.error("Erro ao atualizar perfil")
         } finally {
             setIsSaving(false)
         }
@@ -176,7 +203,7 @@ export default function MyProfile() {
         }
 
         if (securityForm.newPassword && securityForm.newPassword.length < 6) {
-            toast.error("A senha deve ter pelo menos 6 caracteres")
+            toast.error("A nova senha deve ter pelo menos 6 caracteres")
             return
         }
 
@@ -185,14 +212,14 @@ export default function MyProfile() {
             return
         }
 
+        setIsSaving(true)
         try {
-            setIsSaving(true)
-
+            const token = localStorage.getItem("token")
             const response = await fetch("http://localhost:8081/api/v1/auth/logged/password", {
                 method: "PATCH",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
                 body: JSON.stringify({
                     password: securityForm.currentPassword,
@@ -201,116 +228,103 @@ export default function MyProfile() {
                 }),
             })
 
-            console.log(response)
-            
-            const result = await response.json()
-            console.log(result)
-            
-            if (response.ok && result.success) {
+            if (response.ok) {
                 toast.success("Configurações de segurança atualizadas! Faça login novamente.")
                 localStorage.removeItem("token")
                 localStorage.removeItem("user")
                 router.push("/login")
-                setSecurityForm({
-                    currentPassword: "",
-                    newPassword: "",
-                    confirmPassword: "",
-                    twoFactorEnabled: securityForm.twoFactorEnabled,
-                })
             } else {
-                throw new Error(result.message || "Erro ao atualizar segurança")
+                const error = await response.json()
+                toast.error(error.message || "Erro ao atualizar configurações de segurança")
             }
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Erro ao atualizar configurações de segurança")
+        } catch (error) {
+            console.error("Error updating security:", error)
+            toast.error("Erro ao atualizar configurações de segurança")
         } finally {
             setIsSaving(false)
         }
     }
 
     const handleSaveNotifications = async () => {
+        setIsSaving(true)
         try {
-            setIsSaving(true)
-
-            const response = await fetch("http://localhost:8081/api/v1/user/update", {
+            const token = localStorage.getItem("token")
+            const response = await fetch("http://localhost:8081/api/v1/nurse/update", {
                 method: "PATCH",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
-                body: JSON.stringify(notificationPrefs),
+                body: JSON.stringify(notificationsForm),
             })
 
-            const result = await response.json()
-
-            if (response.ok && result.success) {
-                toast.success(result.message || "Preferências de notificação atualizadas!")
+            if (response.ok) {
+                toast.success("Preferências de notificação atualizadas!")
             } else {
-                throw new Error(result.message || "Erro ao atualizar notificações")
+                toast.error("Erro ao atualizar preferências")
             }
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Erro ao atualizar preferências")
+        } catch (error) {
+            console.error("Error updating notifications:", error)
+            toast.error("Erro ao atualizar preferências")
         } finally {
             setIsSaving(false)
         }
     }
 
     const handleSavePrivacy = async () => {
+        setIsSaving(true)
         try {
-            setIsSaving(true)
-
-            const response = await fetch("http://localhost:8081/api/v1/user/update", {
+            const token = localStorage.getItem("token")
+            const response = await fetch("http://localhost:8081/api/v1/nurse/update", {
                 method: "PATCH",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
-                body: JSON.stringify(privacySettings),
+                body: JSON.stringify(privacyForm),
             })
 
-            const result = await response.json()
-
-            if (response.ok && result.success) {
-                toast.success(result.message || "Configurações de privacidade atualizadas!")
+            if (response.ok) {
+                toast.success("Configurações de privacidade atualizadas!")
             } else {
-                throw new Error(result.message || "Erro ao atualizar privacidade")
+                toast.error("Erro ao atualizar configurações")
             }
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Erro ao atualizar configurações")
+        } catch (error) {
+            console.error("Error updating privacy:", error)
+            toast.error("Erro ao atualizar configurações")
         } finally {
             setIsSaving(false)
         }
     }
 
     const handleDeleteAccount = async () => {
+        setIsSaving(true)
         try {
-            setIsSaving(true)
-
-            const response = await fetch("http://localhost:8081/api/v1/user/delete", {
+            const token = localStorage.getItem("token")
+            const response = await fetch("http://localhost:8081/api/v1/nurse/delete", {
                 method: "DELETE",
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${token}`,
                 },
             })
 
-            const result = await response.json()
-
-            if (response.ok && result.success) {
-                toast.success(result.message || "Conta desativada com sucesso!")
-                localStorage.removeItem("user")
+            if (response.ok) {
+                toast.success("Conta desativada com sucesso")
                 localStorage.removeItem("token")
-                router.push("/login")
+                localStorage.removeItem("user")
+                router.push("/")
             } else {
-                throw new Error(result.message || "Erro ao desativar conta")
+                toast.error("Erro ao desativar conta")
             }
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Erro ao desativar conta")
+        } catch (error) {
+            console.error("Error deleting account:", error)
+            toast.error("Erro ao desativar conta")
         } finally {
             setIsSaving(false)
         }
     }
 
-    const formatDate = (dateString: string) => {
+    const formatDate = (dateString?: string) => {
         if (!dateString) return "N/A"
         const date = new Date(dateString)
         return date.toLocaleDateString("pt-BR", {
@@ -320,43 +334,31 @@ export default function MyProfile() {
         })
     }
 
-    const formatCPF = (cpf: string) => {
-        if (!cpf) return "N/A"
-        return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
-    }
-
-    const formatPhone = (phone: string) => {
-        if (!phone) return "N/A"
-        return phone.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")
-    }
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50">
                 <Header />
-                <div className="container mx-auto px-4 py-8 text-center">
-                    <div className="flex justify-center items-center h-48">
-                        <div className="text-[#15803d] text-lg">Carregando seu perfil...</div>
-                    </div>
+                <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#15803d]" />
                 </div>
             </div>
         )
     }
 
-    if (!patient) {
+    if (!nurseData) {
         return (
             <div className="min-h-screen bg-gray-50">
                 <Header />
                 <div className="container mx-auto px-4 py-8 text-center">
                     <h1 className="text-red-600 mb-4">Erro ao carregar perfil</h1>
-                    <Button onClick={() => router.push("/")}>Voltar para Início</Button>
+                    <Button onClick={() => router.push("/nurse-dashboard")}>Voltar para Dashboard</Button>
                 </div>
             </div>
         )
     }
 
-    const avatarUrl = patient.profile_image_id
-        ? `http://localhost:8081/api/v1/user/file/${patient.profile_image_id}`
+    const avatarUrl = nurseData.profile_image_id
+        ? `http://localhost:8081/api/v1/user/file/${nurseData.profile_image_id}`
         : undefined
 
     return (
@@ -368,6 +370,7 @@ export default function MyProfile() {
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                     <div className="grid md:grid-cols-4 gap-6">
+                        {/* Sidebar */}
                         <div className="md:col-span-1">
                             <Card>
                                 <CardContent className="p-4">
@@ -376,11 +379,11 @@ export default function MyProfile() {
                                             {avatarUrl ? (
                                                 <img
                                                     src={avatarUrl || "/placeholder.svg"}
-                                                    alt={patient.name}
+                                                    alt={nurseData.name}
                                                     className="w-full h-full object-cover"
                                                 />
                                             ) : (
-                                                patient.name
+                                                nurseData.name
                                                     .split(" ")
                                                     .map((n) => n[0])
                                                     .slice(0, 2)
@@ -388,8 +391,8 @@ export default function MyProfile() {
                                                     .toUpperCase()
                                             )}
                                         </div>
-                                        <h2 className="text-lg font-bold text-gray-900">{patient.name}</h2>
-                                        <p className="text-sm text-[#15803d]">Paciente</p>
+                                        <h2 className="text-lg font-bold text-gray-900">{nurseData.name}</h2>
+                                        <p className="text-sm text-[#15803d]">Enfermeiro(a)</p>
                                     </div>
 
                                     <Separator className="mb-4" />
@@ -435,7 +438,9 @@ export default function MyProfile() {
                             </Card>
                         </div>
 
+                        {/* Content */}
                         <div className="md:col-span-3">
+                            {/* Profile Tab */}
                             <TabsContent value="profile" className="mt-0 space-y-6">
                                 <Card>
                                     <CardHeader>
@@ -443,60 +448,94 @@ export default function MyProfile() {
                                             <User size={20} />
                                             Informações Pessoais
                                         </CardTitle>
-                                        <CardDescription>Atualize suas informações de contato e endereço</CardDescription>
+                                        <CardDescription>Atualize suas informações profissionais</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div>
-                                            <Label htmlFor="name">Nome Completo</Label>
-                                            <Input
-                                                id="name"
-                                                value={editForm.name}
-                                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                                className="mt-1"
-                                            />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="name">Nome Completo</Label>
+                                                <Input
+                                                    id="name"
+                                                    value={profileForm.name}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="email">Email</Label>
+                                                <Input
+                                                    id="email"
+                                                    type="email"
+                                                    value={profileForm.email}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="phone">Telefone</Label>
+                                                <Input
+                                                    id="phone"
+                                                    value={profileForm.phone}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                                                    placeholder="Digite seu telefone"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="license">COREN</Label>
+                                                <Input
+                                                    id="license"
+                                                    value={profileForm.license_number}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, license_number: e.target.value })}
+                                                    placeholder="Digite seu COREN"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="experience">Anos de Experiência</Label>
+                                                <Input
+                                                    id="experience"
+                                                    type="number"
+                                                    value={profileForm.years_experience}
+                                                    onChange={(e) =>
+                                                        setProfileForm({
+                                                            ...profileForm,
+                                                            years_experience: Number.parseInt(e.target.value) || 0,
+                                                        })
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="department">Departamento</Label>
+                                                <Input
+                                                    id="department"
+                                                    value={profileForm.department}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, department: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="space-y-2 md:col-span-2">
+                                                <Label htmlFor="specialization">Especialização</Label>
+                                                <Input
+                                                    id="specialization"
+                                                    value={profileForm.specialization}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, specialization: e.target.value })}
+                                                />
+                                            </div>
                                         </div>
-                                        <div>
-                                            <Label htmlFor="email">Email</Label>
-                                            <Input
-                                                id="email"
-                                                type="email"
-                                                value={editForm.email}
-                                                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                                className="mt-1"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="phone">Telefone</Label>
-                                            <Input
-                                                id="phone"
-                                                value={editForm.phone}
-                                                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                                                className="mt-1"
-                                            />
-                                        </div>
-                                        <div>
+                                        <div className="space-y-2">
                                             <Label htmlFor="address">Endereço</Label>
                                             <Input
                                                 id="address"
-                                                value={editForm.address}
-                                                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                                                className="mt-1"
+                                                value={profileForm.address}
+                                                onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
                                             />
                                         </div>
-
-                                        <Separator />
-
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <div className="p-4 bg-gray-50 rounded-lg">
-                                                <div className="text-sm text-gray-600 mb-1">CPF</div>
-                                                <div className="font-semibold text-gray-900">{formatCPF(patient.cpf)}</div>
-                                            </div>
-                                            <div className="p-4 bg-gray-50 rounded-lg">
-                                                <div className="text-sm text-gray-600 mb-1">Função</div>
-                                                <div className="font-semibold text-gray-900">Paciente</div>
-                                            </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="bio">Biografia Profissional</Label>
+                                            <Textarea
+                                                id="bio"
+                                                rows={4}
+                                                value={profileForm.bio}
+                                                onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                                                placeholder="Conte um pouco sobre sua experiência profissional..."
+                                            />
                                         </div>
-
                                         <Button
                                             onClick={handleSaveProfile}
                                             disabled={isSaving}
@@ -509,6 +548,7 @@ export default function MyProfile() {
                                 </Card>
                             </TabsContent>
 
+                            {/* Security Tab */}
                             <TabsContent value="security" className="mt-0 space-y-6">
                                 <Card>
                                     <CardHeader>
@@ -587,6 +627,7 @@ export default function MyProfile() {
                                 </Card>
                             </TabsContent>
 
+                            {/* Notifications Tab */}
                             <TabsContent value="notifications" className="mt-0">
                                 <Card>
                                     <CardHeader>
@@ -603,9 +644,9 @@ export default function MyProfile() {
                                                 <div className="text-sm text-gray-600">Receba atualizações importantes por email</div>
                                             </div>
                                             <Switch
-                                                checked={notificationPrefs.emailNotifications}
+                                                checked={notificationsForm.emailNotifications}
                                                 onCheckedChange={(checked) =>
-                                                    setNotificationPrefs({ ...notificationPrefs, emailNotifications: checked })
+                                                    setNotificationsForm({ ...notificationsForm, emailNotifications: checked })
                                                 }
                                             />
                                         </div>
@@ -616,22 +657,22 @@ export default function MyProfile() {
                                                 <div className="text-sm text-gray-600">Receba lembretes por mensagem de texto</div>
                                             </div>
                                             <Switch
-                                                checked={notificationPrefs.smsNotifications}
+                                                checked={notificationsForm.smsNotifications}
                                                 onCheckedChange={(checked) =>
-                                                    setNotificationPrefs({ ...notificationPrefs, smsNotifications: checked })
+                                                    setNotificationsForm({ ...notificationsForm, smsNotifications: checked })
                                                 }
                                             />
                                         </div>
 
                                         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                             <div className="flex-1">
-                                                <div className="font-semibold text-gray-900 mb-1">Lembretes de Consultas</div>
-                                                <div className="text-sm text-gray-600">Receba lembretes antes das suas consultas</div>
+                                                <div className="font-semibold text-gray-900 mb-1">Lembretes de Visitas</div>
+                                                <div className="text-sm text-gray-600">Receba lembretes antes das suas visitas</div>
                                             </div>
                                             <Switch
-                                                checked={notificationPrefs.appointmentReminders}
+                                                checked={notificationsForm.appointmentReminders}
                                                 onCheckedChange={(checked) =>
-                                                    setNotificationPrefs({ ...notificationPrefs, appointmentReminders: checked })
+                                                    setNotificationsForm({ ...notificationsForm, appointmentReminders: checked })
                                                 }
                                             />
                                         </div>
@@ -642,9 +683,9 @@ export default function MyProfile() {
                                                 <div className="text-sm text-gray-600">Receba ofertas e novidades</div>
                                             </div>
                                             <Switch
-                                                checked={notificationPrefs.promotionalEmails}
+                                                checked={notificationsForm.marketingEmails}
                                                 onCheckedChange={(checked) =>
-                                                    setNotificationPrefs({ ...notificationPrefs, promotionalEmails: checked })
+                                                    setNotificationsForm({ ...notificationsForm, marketingEmails: checked })
                                                 }
                                             />
                                         </div>
@@ -661,6 +702,7 @@ export default function MyProfile() {
                                 </Card>
                             </TabsContent>
 
+                            {/* Privacy Tab */}
                             <TabsContent value="privacy" className="mt-0">
                                 <Card>
                                     <CardHeader>
@@ -674,13 +716,11 @@ export default function MyProfile() {
                                         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                             <div className="flex-1">
                                                 <div className="font-semibold text-gray-900 mb-1">Perfil Visível</div>
-                                                <div className="text-sm text-gray-600">Permitir que enfermeiros vejam seu perfil</div>
+                                                <div className="text-sm text-gray-600">Permitir que pacientes vejam seu perfil</div>
                                             </div>
                                             <Switch
-                                                checked={privacySettings.profileVisible}
-                                                onCheckedChange={(checked) =>
-                                                    setPrivacySettings({ ...privacySettings, profileVisible: checked })
-                                                }
+                                                checked={privacyForm.profileVisibility}
+                                                onCheckedChange={(checked) => setPrivacyForm({ ...privacyForm, profileVisibility: checked })}
                                             />
                                         </div>
 
@@ -690,8 +730,8 @@ export default function MyProfile() {
                                                 <div className="text-sm text-gray-600">Exibir seu email no perfil público</div>
                                             </div>
                                             <Switch
-                                                checked={privacySettings.showEmail}
-                                                onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, showEmail: checked })}
+                                                checked={privacyForm.showEmail}
+                                                onCheckedChange={(checked) => setPrivacyForm({ ...privacyForm, showEmail: checked })}
                                             />
                                         </div>
 
@@ -701,8 +741,8 @@ export default function MyProfile() {
                                                 <div className="text-sm text-gray-600">Exibir seu telefone no perfil público</div>
                                             </div>
                                             <Switch
-                                                checked={privacySettings.showPhone}
-                                                onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, showPhone: checked })}
+                                                checked={privacyForm.showPhone}
+                                                onCheckedChange={(checked) => setPrivacyForm({ ...privacyForm, showPhone: checked })}
                                             />
                                         </div>
 
@@ -718,6 +758,7 @@ export default function MyProfile() {
                                 </Card>
                             </TabsContent>
 
+                            {/* Account Tab */}
                             <TabsContent value="account" className="mt-0">
                                 <Card>
                                     <CardHeader>
@@ -732,7 +773,7 @@ export default function MyProfile() {
                                             <Calendar size={20} className="text-[#15803d]" />
                                             <div className="flex-1">
                                                 <div className="text-sm text-gray-600">Data de Cadastro</div>
-                                                <div className="font-semibold text-gray-900">{formatDate(patient.created_at)}</div>
+                                                <div className="font-semibold text-gray-900">{formatDate(nurseData.created_at)}</div>
                                             </div>
                                         </div>
 
@@ -740,7 +781,7 @@ export default function MyProfile() {
                                             <Calendar size={20} className="text-[#15803d]" />
                                             <div className="flex-1">
                                                 <div className="text-sm text-gray-600">Última Atualização</div>
-                                                <div className="font-semibold text-gray-900">{formatDate(patient.updated_at)}</div>
+                                                <div className="font-semibold text-gray-900">{formatDate(nurseData.updated_at)}</div>
                                             </div>
                                         </div>
 
@@ -750,16 +791,11 @@ export default function MyProfile() {
                                                 <div className="text-sm text-gray-600">Status da Conta</div>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <Badge
-                                                        variant={patient.hidden ? "secondary" : "default"}
-                                                        className={patient.hidden ? "" : "bg-[#15803d]"}
+                                                        variant={nurseData.hidden ? "secondary" : "default"}
+                                                        className={nurseData.hidden ? "" : "bg-[#15803d]"}
                                                     >
-                                                        {patient.hidden ? "Inativo" : "Ativo"}
+                                                        {nurseData.hidden ? "Inativo" : "Ativo"}
                                                     </Badge>
-                                                    {patient.first_access && (
-                                                        <Badge variant="outline" className="border-amber-500 text-amber-500">
-                                                            Primeiro Acesso
-                                                        </Badge>
-                                                    )}
                                                 </div>
                                             </div>
                                         </div>

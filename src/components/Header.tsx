@@ -140,7 +140,7 @@ export function Header() {
         profileUrl = `/patient/my-profile`
         break
       case "NURSE":
-        profileUrl = `/visit/nurses-list/${userData.id}`
+        profileUrl = `/nurse-profile/my-profile`
         break
       default:
         profileUrl = `/profile/${userData.id}` // Um fallback genérico
@@ -186,15 +186,12 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel>Notificações</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {/* ... conteúdo das notificações ... */}
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* User Profile Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
-                    {/* ✅ ALTERADO AQUI: Aumentado o tamanho do Avatar para 40x40px (h-10 w-10) */}
                     <Avatar className="h-10 w-10">
                       {avatarUrl && <AvatarImage src={avatarUrl} alt={userData?.name} />}
                       <AvatarFallback className="bg-[#15803d] text-white">
