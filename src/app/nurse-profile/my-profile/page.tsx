@@ -94,6 +94,12 @@ export default function NurseMyProfile() {
                 const token = localStorage.getItem("token")
                 const user = JSON.parse(localStorage.getItem("user") || "{}")
 
+                if (!user.id) {
+                    toast.error("Sessão inválida. Por favor, faça login novamente.")
+                    router.push("/login")
+                    return
+                }
+
                 const response = await fetch(`http://localhost:8081/api/v1/user/nurse/${user.id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
