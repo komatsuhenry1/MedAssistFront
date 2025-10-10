@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
             toast.error("Por favor, insira seu email.")
             return
         }
-
+e
         setIsLoading(true)
 
         try {

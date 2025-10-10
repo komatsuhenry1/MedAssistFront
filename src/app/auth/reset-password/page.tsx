@@ -94,6 +94,8 @@ function ResetPasswordPage() {
 
             if (response.ok) {
                 toast.success("Senha alterada com sucesso!")
+                localStorage.removeItem("token")
+                localStorage.removeItem("user")
                 router.push("/login")
             } else {
                 toast.error(data.message || "Não foi possível alterar a senha.")
