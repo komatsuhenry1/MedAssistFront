@@ -94,7 +94,7 @@ export default function NurseMyProfile() {
                 const token = localStorage.getItem("token")
                 const user = JSON.parse(localStorage.getItem("user") || "{}")
 
-                if (!user.id) {
+                if (!user._id || !token) {
                     toast.error("Sessão inválida. Por favor, faça login novamente.")
                     router.push("/login")
                     return
