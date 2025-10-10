@@ -94,7 +94,7 @@ export default function MyProfile() {
                 const user = JSON.parse(storedUser)
                 const patientId = user.id || user._id
 
-                const response = await fetch(`http://localhost:8081/api/v1/nurse/patient/${patientId}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/apinurse/patient/${patientId}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -133,7 +133,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch("http://localhost:8081/api/v1/user/update", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/update`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -188,7 +188,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch("http://localhost:8081/api/v1/auth/logged/password", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logged/password`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -231,7 +231,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch("http://localhost:8081/api/v1/user/update", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/update`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -258,7 +258,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch("http://localhost:8081/api/v1/user/update", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/update`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -285,7 +285,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch("http://localhost:8081/api/v1/user/delete", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/delete`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -356,7 +356,7 @@ export default function MyProfile() {
     }
 
     const avatarUrl = patient.profile_image_id
-        ? `http://localhost:8081/api/v1/user/file/${patient.profile_image_id}`
+        ? `${process.env.NEXT_PUBLIC_API_URL}/user/file/${patient.profile_image_id}`
         : undefined
 
     return (

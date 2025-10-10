@@ -150,7 +150,7 @@ export default function NurseMyProfile() {
         setIsSaving(true)
         try {
             const token = localStorage.getItem("token")
-            const response = await fetch("http://localhost:8081/api/v1/nurse/update", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/nurse/update`, {
                 method: "PATCH",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -178,7 +178,7 @@ export default function NurseMyProfile() {
                 user.email = profileForm.email
                 localStorage.setItem("user", JSON.stringify(user))
 
-                const updatedResponse = await fetch(`http://localhost:8081/api/v1/user/nurse/${user.id}`, {
+                const updatedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/nurse/${user.id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -219,7 +219,7 @@ export default function NurseMyProfile() {
         setIsSaving(true)
         try {
             const token = localStorage.getItem("token")
-            const response = await fetch("http://localhost:8081/api/v1/auth/logged/password", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logged/password"`, {
                 method: "PATCH",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -253,7 +253,7 @@ export default function NurseMyProfile() {
         setIsSaving(true)
         try {
             const token = localStorage.getItem("token")
-            const response = await fetch("http://localhost:8081/api/v1/nurse/update", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/nurse/update`, {
                 method: "PATCH",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -279,7 +279,7 @@ export default function NurseMyProfile() {
         setIsSaving(true)
         try {
             const token = localStorage.getItem("token")
-            const response = await fetch("http://localhost:8081/api/v1/nurse/update", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/nurse/update`, {
                 method: "PATCH",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -305,7 +305,7 @@ export default function NurseMyProfile() {
         setIsSaving(true)
         try {
             const token = localStorage.getItem("token")
-            const response = await fetch("http://localhost:8081/api/v1/nurse/delete", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/nurse/delete`, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -362,7 +362,7 @@ export default function NurseMyProfile() {
     }
 
     const avatarUrl = nurseData.profile_image_id
-        ? `http://localhost:8081/api/v1/user/file/${nurseData.profile_image_id}`
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/file/${nurseData.profile_image_id}`
         : undefined
 
     return (

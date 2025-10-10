@@ -46,7 +46,7 @@ export default function ValidateCodePage() {
         setIsLoading(true)
 
         try {
-            const response = await fetch("http://localhost:8081/api/v1/auth/validate", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/validate`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { User, Mail, Phone, MapPin, Calendar, Shield, CreditCard, Clock } from "lucide-react"
 
-// ✅ NOVO: Constante para a URL base da API para manter o código limpo
-const API_BASE_URL = "http://localhost:8081/api/v1"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+
 interface PatientData {
     id: string
     name: string
@@ -46,7 +46,7 @@ export default function PatientProfile() {
         const fetchPatientData = async () => {
             try {
                 setLoading(true)
-                const response = await fetch(`http://localhost:8081/api/v1/nurse/patient/${patientId}`, {
+                const response = await fetch(`${API_BASE_URL}/nurse/patient/${patientId}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
