@@ -146,7 +146,7 @@ export default function ValidateCodePage() {
                             </p>
 
                             <Link
-                                href="/auth/login"
+                                href="/login"
                                 className="text-sm text-[#15803d] hover:underline inline-flex items-center gap-1"
                             >
                                 <ArrowLeft className="h-4 w-4" />

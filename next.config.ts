@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
+      // Padrões para ambiente LOCAL
       {
         protocol: 'http',
         hostname: 'localhost',
@@ -27,13 +28,26 @@ const nextConfig: NextConfig = {
         port: '8081',
         pathname: '/api/v1/admin/file/**',
       },
+      // Padrão para Unsplash (se você usar)
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         port: '',
-        pathname: '/**', // Permite qualquer caminho de imagem nesse hostname
+        pathname: '/**',
       },
-
+      // [MUDANÇA] Padrões adicionados para o ambiente de PRODUÇÃO
+      {
+        protocol: 'https',
+        hostname: 'vitabackend.onrender.com',
+        port: '',
+        pathname: '/api/v1/user/file/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'vitabackend.onrender.com',
+        port: '',
+        pathname: '/api/v1/admin/file/**',
+      },
     ],
   },
 };
