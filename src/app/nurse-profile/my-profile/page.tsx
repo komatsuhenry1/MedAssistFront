@@ -102,7 +102,9 @@ export default function NurseMyProfile() {
 
                 const userId = user._id || user.id
 
-                const response = await fetch(`http://localhost:8081/api/v1/user/nurse/${userId}`, {
+                
+
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/nurse/${userId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
