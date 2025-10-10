@@ -97,7 +97,10 @@ export default function NurseDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch("http://192.168.18.131:8081/api/v1/nurse/dashboard", {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+
+        const response = await fetch(`${API_BASE_URL}/nurse/dashboard`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -141,7 +144,9 @@ export default function NurseDashboard() {
   const toggleOnlineStatus = async () => {
     setIsToggling(true)
     try {
-      const response = await fetch("http://192.168.18.131:8081/api/v1/nurse/online", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+      const response = await fetch(`${API_BASE_URL}/nurse/online`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -259,7 +264,9 @@ export default function NurseDashboard() {
   const handleUpdateAvailability = async () => {
     setIsUpdatingAvailability(true)
     try {
-      const response = await fetch("http://192.168.18.131:8081/api/v1/nurse/update", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+      const response = await fetch(`${API_BASE_URL}/nurse/update`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -311,7 +318,9 @@ export default function NurseDashboard() {
   const handleUpdateProfile = async () => {
     setIsUpdatingProfile(true)
     try {
-      const response = await fetch("http://192.168.18.131:8081/api/v1/nurse/update", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+      const response = await fetch(`${API_BASE_URL}/nurse/update`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,

@@ -48,8 +48,10 @@ export default function Contato() {
         setIsSubmitting(true)
         setFormStatus({ message: "", type: "" })
 
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
         try {
-            const contactUsUrl = `http://192.168.18.131:8081/api/v1/user/contact`
+            const contactUsUrl = `${API_BASE_URL}/user/contact`
             const response = await fetch(contactUsUrl, {
                 method: "POST",
                 headers: {

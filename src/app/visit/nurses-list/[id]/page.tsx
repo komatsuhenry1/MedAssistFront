@@ -46,8 +46,6 @@ interface ApiResponse {
     success: boolean
 }
 
-const API_BASE_URL = "http://192.168.18.131:8081/api/v1"
-
 export default function NurseProfile() {
     const params = useParams()
     const router = useRouter()
@@ -71,17 +69,15 @@ export default function NurseProfile() {
     const [bookingSuccess, setBookingSuccess] = useState(false)
     const [bookingError, setBookingError] = useState<string | null>(null)
 
-    // Efeito para carregar os dados do enfermeiro
     useEffect(() => {
         const fetchNurseData = async () => {
             try {
                 setLoading(true)
-                // Use a constante API_BASE_URL para formar a URL
+                const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
                 const response = await fetch(`${API_BASE_URL}/user/nurse/${nurseId}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
-                        // Boa prática: usar um fallback para o token
                         Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
                     },
                 })
@@ -145,6 +141,8 @@ export default function NurseProfile() {
             }
 
             const token = localStorage.getItem("token")
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
             const response = await fetch(`${API_BASE_URL}/user/visit`, { // 💡 Boa Prática: Usar a constante API_BASE_URL
                 method: "POST",
                 headers: {
@@ -209,7 +207,7 @@ export default function NurseProfile() {
             </div>
         )
     }
-
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
     const imageUrl = nurse?.image ? `${API_BASE_URL}/user/file/${nurse.image}` : "/placeholder-avatar.png"
 
     return (

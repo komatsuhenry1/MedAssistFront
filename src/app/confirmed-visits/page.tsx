@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, Clock, MapPin, FileText, CheckCircle, XCircle } from "lucide-react"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.18.131:8081/api/v1"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
 
 interface Nurse {
     id: string

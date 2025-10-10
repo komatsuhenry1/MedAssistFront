@@ -29,7 +29,9 @@ export default function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      const loginUrl = `http://192.168.18.131:8081/api/v1/auth/login`
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+      const loginUrl = `${API_BASE_URL}/auth/login`
 
       const res = await fetch(loginUrl, {
         method: "POST",

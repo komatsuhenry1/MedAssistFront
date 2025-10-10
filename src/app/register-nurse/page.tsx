@@ -188,7 +188,8 @@ export default function RegisterPage() {
     })
 
     try {
-      const registerUrl = `http://192.168.18.131:8081/api/v1/auth/nurse`
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+      const registerUrl = `${API_BASE_URL}/auth/nurse`
       const response = await fetch(registerUrl, {
         method: "POST",
         body: formDataToSend,

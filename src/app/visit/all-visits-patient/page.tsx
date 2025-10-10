@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, User, MapPin, FileText, AlertCircle, CheckCircle, XCircle, DollarSign } from "lucide-react"
 import { toast } from "sonner"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.18.131:8081/api/v1"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 interface Visit {
     id: number
