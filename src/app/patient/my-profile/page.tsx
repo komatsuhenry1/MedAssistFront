@@ -92,7 +92,7 @@ export default function MyProfile() {
                 }
 
                 const user = JSON.parse(storedUser)
-                const patientId = user.id
+                const patientId = user.id || user._id
 
                 const response = await fetch(`http://localhost:8081/api/v1/nurse/patient/${patientId}`, {
                     method: "GET",

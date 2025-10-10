@@ -159,7 +159,7 @@ export default function LoginPage() {
 
                 <div style={{ textAlign: "right" }}>
                   <Link
-                    href="/auth/two-factor"
+                    href="/send-email"
                     style={{
                       color: "#15803d",
                       textDecoration: "none",
