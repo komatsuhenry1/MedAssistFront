@@ -40,33 +40,37 @@ export default function LoginPage() {
       const data = await res.json()
 
       if (data.success) {
-        toast.success("Login realizado com sucesso!")
-
         const user = data.data.user
         const token = data.data.token
 
-        // --- MUDANÇA PRINCIPAL AQUI ---
-        // 1. Salvamos o token, que é essencial para a autenticação.
-        localStorage.setItem("token", token)
+        console.log(data.data.user.email)
 
-        // 2. Salvamos o objeto 'user' inteiro como uma string JSON.
-        //    O Header vai ler este objeto para exibir nome, email e os links corretos.
-        localStorage.setItem("user", JSON.stringify(user))
-
-        // A lógica de redirecionamento permanece a mesma
         if (user.role === "NURSE") {
-          if(data.data.user.two_factor){
+          if (data.data.user.two_factor){
             router.push("/auth/two-factor")
+            localStorage.setItem("email", data.data.user.email)
+            toast.success(`Verificação ativada. Verifique a caixa de entrada do email: ${data.data.user.email}`)
             return
           }
+          localStorage.setItem("token", token)
+          localStorage.setItem("user", JSON.stringify(user))  
+          toast.success("Login realizado com sucesso!")
           router.push("/dashboard/nurse")
         } else if (user.role === "ADMIN") {
+          localStorage.setItem("token", token)
+          localStorage.setItem("user", JSON.stringify(user))  
+          toast.success("Login realizado com sucesso!")
           router.push("/dashboard/admin")
         } else if (user.role === "PATIENT") {
-          if(data.data.user.two_factor){
+          if (data.data.user.two_factor) {
+            localStorage.setItem("email", data.data.user.email)
+            toast.success(`Verificação ativada. Verifique a caixa de entrada do email: ${data.data.user.email}`)
             router.push("/auth/two-factor")
             return
           }
+          localStorage.setItem("token", token)
+          localStorage.setItem("user", JSON.stringify(user))  
+          toast.success("Login realizado com sucesso!")
           router.push("/visit/nurses-list") // Rota ajustada como no Header
         } else {
           router.push("/")

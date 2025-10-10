@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,16 +12,29 @@ import { Shield, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 export default function ValidateCodePage() {
-    const [email, setEmail] = useState("")
+    const [email, setEmail] = useState<string | null>(null)
     const [code, setCode] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
+
+    useEffect(() => {
+        const emailFromStorage = localStorage.getItem("email")
+
+        if (emailFromStorage) {
+            setEmail(emailFromStorage)
+        } else {
+            toast.error("Email não encontrado. Por favor, faça login novamente.")
+            setTimeout(() => {
+                router.push("/auth/login")
+            }, 2000)
+        }
+    }, [router])
 
     const handleValidateCode = async (e: React.FormEvent) => {
         e.preventDefault()
 
         if (!email || !code) {
-            toast.error("Por favor, preencha todos os campos.")
+            toast.error("Por favor, preencha o código.")
             return
         }
 
@@ -47,14 +60,25 @@ export default function ValidateCodePage() {
             const result = await response.json()
 
             if (response.ok && result.success) {
-                // Store the JWT token in localStorage
-                localStorage.setItem("token", result.data)
+                localStorage.setItem("token", result.data.token)
+                localStorage.setItem("user", JSON.stringify(result.data.user))
 
-                toast.success(result.message || "Código validado com sucesso!")
+                localStorage.removeItem("email")
 
-                // Redirect to home or dashboard
+                const userRole = result.data.user.role
                 setTimeout(() => {
-                    router.push("/")
+                    if (userRole === "NURSE") {
+                        toast.success("Login realizado com sucesso!")
+                        router.push("/dashboard/nurse")
+                    } else if (userRole === "PATIENT") {
+                        toast.success("Login realizado com sucesso!")
+                        router.push("/visit/nurses-list") // Rota ajustada como no Header
+                    } else if (userRole === "ADMIN") {
+                        toast.success("Login realizado com sucesso!")
+                        router.push("/dashboard/admin")
+                    } else {
+                        router.push("/")
+                    }
                 }, 1000)
             } else {
                 toast.error(result.message || "Código inválido. Tente novamente.")
@@ -79,7 +103,6 @@ export default function ValidateCodePage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleValidateCode} className="space-y-4">
-
                         <div className="space-y-2">
                             <Label htmlFor="code">Código de Verificação</Label>
                             <Input
@@ -97,6 +120,7 @@ export default function ValidateCodePage() {
                                 disabled={isLoading}
                                 maxLength={6}
                                 required
+                                autoFocus
                             />
                             <p className="text-xs text-muted-foreground text-center">Digite o código de 6 dígitos</p>
                         </div>
