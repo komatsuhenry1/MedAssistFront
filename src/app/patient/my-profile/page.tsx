@@ -94,7 +94,7 @@ export default function MyProfile() {
                 const user = JSON.parse(storedUser)
                 const patientId = user.id || user._id
 
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/apinurse/patient/${patientId}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nurse/patient/${patientId}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
