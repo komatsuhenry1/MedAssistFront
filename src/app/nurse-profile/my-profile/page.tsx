@@ -100,7 +100,9 @@ export default function NurseMyProfile() {
                     return
                 }
 
-                const response = await fetch(`http://localhost:8081/api/v1/user/nurse/${user.id}`, {
+                const userId = user._id || user.id
+
+                const response = await fetch(`http://localhost:8081/api/v1/user/nurse/${userId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
