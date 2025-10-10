@@ -1,6 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
+// [MUDANÇA] Imports adicionados para seguir as boas práticas do Next.js
+import Link from "next/link"
+import Image from "next/image"
+import { useRouter } from "next/navigation"
+
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -15,22 +20,26 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Menu, LogOut, User, UserPlus, Bell } from "lucide-react"
 
-// Constante para a URL base da API
-const API_BASE_URL = "http://localhost:8081/api/v1"
+// [MUDANÇA] URL da API agora usa uma variável de ambiente para funcionar tanto localmente quanto em produção.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
-// Interface atualizada para esperar o ID da imagem
 interface UserData {
   name: string
   email: string
   role: "PATIENT" | "NURSE" | "ADMIN"
   id: string
-  profile_image_id?: string // Esperamos o ID da imagem, que vem do localStorage
+  profile_image_id?: string
 }
 
 export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userData, setUserData] = useState<UserData | null>(null)
-  const [notificationsCount, setNotificationsCount] = useState(3)
+  // [MUDANÇA] Removido o useState, já que o setNotificationsCount não era utilizado.
+  // Se esse valor vier a ser dinâmico (buscado de uma API), o useState pode ser reintroduzido.
+  const notificationsCount = 3
+
+  // [MUDANÇA] Adicionado o router para navegação programática
+  const router = useRouter()
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -53,7 +62,8 @@ export function Header() {
     localStorage.removeItem("user")
     setIsAuthenticated(false)
     setUserData(null)
-    window.location.href = "/"
+    // [MUDANÇA] Usando router.push() para uma navegação mais suave, sem recarregar a página.
+    router.push("/")
   }
 
   const getInitials = (name: string) => {
@@ -69,18 +79,19 @@ export function Header() {
   const NavLinks = () => {
     const baseLinks = (
       <>
-        <a href="/" className="text-sm font-medium hover:text-primary transition-colors">
+        {/* [MUDANÇA] Trocado <a> por <Link> */}
+        <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
           Início
-        </a>
-        <a href="/sobre" className="text-sm font-medium hover:text-primary transition-colors">
+        </Link>
+        <Link href="/sobre" className="text-sm font-medium hover:text-primary transition-colors">
           Sobre
-        </a>
-        <a href="/servicos" className="text-sm font-medium hover:text-primary transition-colors">
+        </Link>
+        <Link href="/servicos" className="text-sm font-medium hover:text-primary transition-colors">
           Serviços
-        </a>
-        <a href="/contato" className="text-sm font-medium hover:text-primary transition-colors">
+        </Link>
+        <Link href="/contato" className="text-sm font-medium hover:text-primary transition-colors">
           Contato
-        </a>
+        </Link>
       </>
     )
 
@@ -92,35 +103,36 @@ export function Header() {
       case "PATIENT":
         return (
           <>
-            <a href="/visit/nurses-list" className="text-sm font-medium hover:text-primary transition-colors">
+            {/* [MUDANÇA] Trocado <a> por <Link> */}
+            <Link href="/visit/nurses-list" className="text-sm font-medium hover:text-primary transition-colors">
               Enfermeiros
-            </a>
-            <a href="/confirmed-visits" className="text-sm font-medium hover:text-primary transition-colors">
+            </Link>
+            <Link href="/confirmed-visits" className="text-sm font-medium hover:text-primary transition-colors">
               Visitas Confirmadas
-            </a>
+            </Link>
           </>
         )
       case "NURSE":
         return (
           <>
-            <a href="/dashboard/nurse" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/dashboard/nurse" className="text-sm font-medium hover:text-primary transition-colors">
               Dashboard
-            </a>
-            <a href="/visit/all-visits-patient" className="text-sm font-medium hover:text-primary transition-colors">
+            </Link>
+            <Link href="/visit/all-visits-patient" className="text-sm font-medium hover:text-primary transition-colors">
               Visitas
-            </a>
+            </Link>
           </>
         )
       case "ADMIN":
         return (
           <>
             {baseLinks}
-            <a href="/dashboard/admin" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/dashboard/admin" className="text-sm font-medium hover:text-primary transition-colors">
               Dashboard
-            </a>
-            <a href="/users-manegement" className="text-sm font-medium hover:text-primary transition-colors">
+            </Link>
+            <Link href="/users-manegement" className="text-sm font-medium hover:text-primary transition-colors">
               Painel Administrativo
-            </a>
+            </Link>
           </>
         )
       default:
@@ -132,8 +144,7 @@ export function Header() {
     ? `${API_BASE_URL}/user/file/${userData.profile_image_id}`
     : undefined
 
-  // Lógica para criar a URL do perfil dinamicamente
-  let profileUrl = "#" // URL padrão segura
+  let profileUrl = "#"
   if (userData) {
     switch (userData.role) {
       case "PATIENT":
@@ -143,7 +154,7 @@ export function Header() {
         profileUrl = `/nurse-profile/my-profile`
         break
       default:
-        profileUrl = `/profile/${userData.id}` // Um fallback genérico
+        profileUrl = `/profile/${userData.id}`
         break
     }
   }
@@ -153,10 +164,11 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         {/* LOGO */}
         <div className="flex items-center space-x-2">
-          <a href="/" className="flex items-center space-x-2">
-            <img src="/logo.png" alt="CareConnect Logo" width={40} height={40} className="object-cover" />
+          {/* [MUDANÇA] Trocado <a> por <Link> e <img> por <Image> */}
+          <Link href="/" className="flex items-center space-x-2">
+            <Image src="/logo.png" alt="Vita Logo" width={40} height={40} className="object-cover" />
             <span className="text-lg font-semibold hidden sm:block text-[#15803d]">Vita</span>
-          </a>
+          </Link>
         </div>
 
         {/* MENU DESKTOP */}
@@ -186,6 +198,7 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel>Notificações</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {/* Aqui você pode listar as notificações */}
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -208,17 +221,18 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <a href={profileUrl} className="cursor-pointer flex items-center">
+                  {/* [MUDANÇA] Usando 'asChild' para que o DropdownMenuItem passe suas propriedades para o Link */}
+                  <DropdownMenuItem asChild>
+                    <Link href={profileUrl} className="cursor-pointer flex items-center">
                       <User className="mr-2 h-4 w-4" />
                       <span>Meu Perfil</span>
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <a href="/notifications" className="cursor-pointer flex items-center">
+                    <Link href="/notifications" className="cursor-pointer flex items-center">
                       <Bell className="mr-2 h-4 w-4" />
                       <span>Notificações</span>
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 flex items-center">
@@ -230,12 +244,13 @@ export function Header() {
             </>
           ) : (
             <>
-              <a href="/login">
+              {/* [MUDANÇA] Trocado <a> por <Link> */}
+              <Link href="/login">
                 <Button variant="outline" size="sm" className="flex items-center gap-2 bg-transparent">
                   <User className="h-4 w-4" />
                   Login
                 </Button>
-              </a>
+              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -248,17 +263,17 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40 rounded-xl shadow-lg">
-                  <a href="/register-patient">
-                    <Button className="w-full justify-start" variant="ghost">
+                  <DropdownMenuItem asChild>
+                    <Link href="/register-patient" className="w-full justify-start">
                       Paciente
-                    </Button>
-                  </a>
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <a href="/register-nurse">
-                    <Button className="w-full justify-start" variant="ghost">
+                  <DropdownMenuItem asChild>
+                    <Link href="/register-nurse" className="w-full justify-start">
                       Enfermeiro(a)
-                    </Button>
-                  </a>
+                    </Link>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
@@ -277,7 +292,6 @@ export function Header() {
               <div className="flex flex-col gap-6 mt-8">
                 {isAuthenticated && userData && (
                   <div className="flex items-center gap-3 pb-4 border-b">
-                    {/* O Avatar no mobile já estava com h-10 w-10 */}
                     <Avatar className="h-10 w-10">
                       {avatarUrl && <AvatarImage src={avatarUrl} alt={userData.name} />}
                       <AvatarFallback className="bg-[#15803d] text-white">{getInitials(userData.name)}</AvatarFallback>
@@ -296,13 +310,14 @@ export function Header() {
                 <div className="flex flex-col gap-2 pt-4 border-t">
                   {isAuthenticated ? (
                     <>
-                      <a href={profileUrl}>
+                      {/* [MUDANÇA] Trocado <a> por <Link> */}
+                      <Link href={profileUrl}>
                         <Button variant="ghost" size="sm" className="justify-start w-full">
                           <User className="h-4 w-4 mr-2" />
                           Meu Perfil
                         </Button>
-                      </a>
-                      <a href="/notifications">
+                      </Link>
+                      <Link href="/notifications">
                         <Button variant="ghost" size="sm" className="justify-start w-full">
                           <Bell className="h-4 w-4 mr-2" />
                           Notificações
@@ -312,7 +327,7 @@ export function Header() {
                             </Badge>
                           )}
                         </Button>
-                      </a>
+                      </Link>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -325,22 +340,22 @@ export function Header() {
                     </>
                   ) : (
                     <>
-                      <a href="/login">
+                      <Link href="/login">
                         <Button variant="outline" size="sm" className="justify-start w-full bg-transparent">
                           <User className="h-4 w-4 mr-2" />
                           Login
                         </Button>
-                      </a>
-                      <a href="/register-patient">
+                      </Link>
+                      <Link href="/register-patient">
                         <Button variant="ghost" size="sm" className="justify-start w-full">
                           Cadastrar como Paciente
                         </Button>
-                      </a>
-                      <a href="/register-nurse">
+                      </Link>
+                      <Link href="/register-nurse">
                         <Button variant="ghost" size="sm" className="justify-start w-full">
                           Cadastrar como Enfermeiro(a)
                         </Button>
-                      </a>
+                      </Link>
                     </>
                   )}
                 </div>

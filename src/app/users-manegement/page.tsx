@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8081/api/v1"
 
+// Interfaces de dados
 interface User {
     id: string
     name: string
@@ -101,6 +102,10 @@ interface ApiResponse {
     success: boolean
 }
 
+// [MUDANÇA] Criado um tipo específico para o formulário de edição.
+// Ele combina todas as propriedades de User, Nurse e Visit como opcionais.
+type EditFormState = Partial<User> & Partial<Nurse> & Partial<Visit>
+
 export default function AdminUsersPage() {
     const [adminData, setAdminData] = useState<AdminData | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -118,7 +123,8 @@ export default function AdminUsersPage() {
     const [deletingType, setDeletingType] = useState<"user" | "nurse" | "visit">("user")
     const [isDeleting, setIsDeleting] = useState(false)
 
-    const [editForm, setEditForm] = useState<any>({
+    // [MUDANÇA] O 'any' foi substituído pelo tipo 'EditFormState' para garantir a segurança de tipos.
+    const [editForm, setEditForm] = useState<EditFormState>({
         name: "",
         email: "",
         phone: "",
@@ -251,21 +257,22 @@ export default function AdminUsersPage() {
             })
 
             if (!response.ok) {
-                throw new Error(`Erro ao atualizar ${editingType === "visit" ? "visita" : "usuário"}`)
+                const errorData = await response.json()
+                throw new Error(errorData.message || `Erro ao atualizar ${editingType}`)
             }
 
-            const apiResponse: ApiResponse = await response.json()
+            const apiResponse = await response.json()
 
             if (apiResponse.success) {
                 await fetchAdminData()
-                toast.success("Usuário atualizado com sucesso!")
+                toast.success("Item atualizado com sucesso!")
                 setShowEditDialog(false)
                 setEditingUser(null)
             } else {
                 throw new Error(apiResponse.message || "Erro ao atualizar")
             }
         } catch (err) {
-            toast.error("erro ao atualizar")
+            toast.error(err instanceof Error ? err.message : "Erro ao atualizar")
         } finally {
             setIsUpdating(false)
         }
@@ -277,7 +284,6 @@ export default function AdminUsersPage() {
         setShowDeleteDialog(true)
     }
 
-    // A função handleDelete foi corrigida aqui
     const handleDelete = async () => {
         if (!deletingId) return
 
@@ -296,13 +302,14 @@ export default function AdminUsersPage() {
             })
 
             if (!response.ok) {
-                throw new Error(`Erro ao excluir ${deletingType === "visit" ? "visita" : "usuário"}`)
+                const errorData = await response.json()
+                throw new Error(errorData.message || `Erro ao excluir ${deletingType}`)
             }
 
-            const apiResponse: ApiResponse = await response.json()
+            const apiResponse = await response.json()
             if (apiResponse.success) {
                 toast.success("Item excluído com sucesso!")
-                fetchAdminData() // Busca os dados atualizados do servidor
+                fetchAdminData()
             } else {
                 throw new Error(apiResponse.message || "Erro ao excluir")
             }
@@ -323,6 +330,7 @@ export default function AdminUsersPage() {
     }
 
     const formatDate = (dateString: string) => {
+        if (!dateString) return "Data inválida"
         const date = new Date(dateString)
         return date.toLocaleString("pt-BR", {
             day: "2-digit",
@@ -337,22 +345,15 @@ export default function AdminUsersPage() {
         return new Intl.NumberFormat("pt-BR", {
             style: "currency",
             currency: "BRL",
-        }).format(value)
+        }).format(value || 0)
     }
 
     if (isLoading) {
         return (
-            <div style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
+            <div className="min-h-screen bg-white">
                 <Header />
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        minHeight: "calc(100vh - 80px)",
-                    }}
-                >
-                    <Loader2 className="animate-spin" size={48} style={{ color: "#15803d" }} />
+                <div className="flex justify-center items-center min-h-[calc(100vh-80px)]">
+                    <Loader2 className="animate-spin text-[#15803d]" size={48} />
                 </div>
             </div>
         )
@@ -360,20 +361,11 @@ export default function AdminUsersPage() {
 
     if (error) {
         return (
-            <div style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
+            <div className="min-h-screen bg-white">
                 <Header />
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        minHeight: "calc(100vh - 80px)",
-                        flexDirection: "column",
-                        gap: "1rem",
-                    }}
-                >
-                    <p style={{ fontSize: "1.25rem", color: "#ef4444" }}>{error}</p>
-                    <Button onClick={fetchAdminData} style={{ backgroundColor: "#15803d", color: "white" }}>
+                <div className="flex flex-col justify-center items-center min-h-[calc(100vh-80px)] gap-4">
+                    <p className="text-xl text-red-500">{error}</p>
+                    <Button onClick={fetchAdminData} className="bg-[#15803d] text-white">
                         Tentar Novamente
                     </Button>
                 </div>
@@ -382,25 +374,19 @@ export default function AdminUsersPage() {
     }
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
+        <div className="min-h-screen bg-white">
             <Header />
 
             {/* Hero Section */}
-            <section
-                style={{
-                    background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
-                    color: "white",
-                    padding: "4rem 1rem 2rem",
-                }}
-            >
-                <div style={{ maxWidth: "1200px", margin: "0 auto", textAlign: "center" }}>
-                    <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Gerenciamento de Usuários</h1>
-                    <p style={{ fontSize: "1.25rem", opacity: 0.9 }}>Administre usuários, enfermeiros e visitas da plataforma</p>
+            <section className="bg-gradient-to-r from-[#15803d] to-[#166534] text-white py-16 px-4">
+                <div className="max-w-7xl mx-auto text-center">
+                    <h1 className="text-4xl font-bold mb-4">Gerenciamento de Usuários</h1>
+                    <p className="text-xl opacity-90">Administre usuários, enfermeiros e visitas da plataforma.</p>
                 </div>
             </section>
 
             {/* Content Section */}
-            <section style={{ padding: "3rem 1rem", maxWidth: "1200px", margin: "0 auto" }}>
+            <section className="py-12 px-4 max-w-7xl mx-auto">
                 <Tabs defaultValue="users" className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-6">
                         <TabsTrigger value="users" className="flex items-center gap-2">
@@ -422,13 +408,13 @@ export default function AdminUsersPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Lista de Usuários</CardTitle>
-                                <CardDescription>Gerencie os usuários cadastrados na plataforma</CardDescription>
+                                <CardDescription>Gerencie os usuários cadastrados na plataforma.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {adminData?.users?.length === 0 ? (
-                                    <div style={{ textAlign: "center", padding: "3rem", color: "#6b7280" }}>
+                                    <div className="text-center py-12 text-gray-500">
                                         <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                        <p>Nenhum usuário cadastrado</p>
+                                        <p>Nenhum usuário cadastrado.</p>
                                     </div>
                                 ) : (
                                     <Table>
@@ -492,7 +478,7 @@ export default function AdminUsersPage() {
                             </CardHeader>
                             <CardContent>
                                 {adminData?.nurses?.length === 0 ? (
-                                    <div style={{ textAlign: "center", padding: "3rem", color: "#6b7280" }}>
+                                    <div className="text-center py-12 text-gray-500">
                                         <UserCog className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                         <p>Nenhum enfermeiro cadastrado</p>
                                     </div>
@@ -562,7 +548,7 @@ export default function AdminUsersPage() {
                             </CardHeader>
                             <CardContent>
                                 {adminData?.visits?.length === 0 ? (
-                                    <div style={{ textAlign: "center", padding: "3rem", color: "#6b7280" }}>
+                                    <div className="text-center py-12 text-gray-500">
                                         <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                         <p>Nenhuma visita cadastrada</p>
                                     </div>
@@ -639,7 +625,7 @@ export default function AdminUsersPage() {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 py-4">
                         {editingType === "visit" ? (
                             <>
                                 <div className="grid grid-cols-2 gap-4">
@@ -677,13 +663,12 @@ export default function AdminUsersPage() {
                                         </Select>
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="edit-patient-name">Nome do Paciente</Label>
                                         <Input
                                             id="edit-patient-name"
-                                            value={editForm.patient_name}
+                                            value={editForm.patient_name || ""}
                                             onChange={(e) => setEditForm({ ...editForm, patient_name: e.target.value })}
                                             disabled
                                         />
@@ -692,13 +677,12 @@ export default function AdminUsersPage() {
                                         <Label htmlFor="edit-nurse-name">Nome do Enfermeiro</Label>
                                         <Input
                                             id="edit-nurse-name"
-                                            value={editForm.nurse_name}
+                                            value={editForm.nurse_name || ""}
                                             onChange={(e) => setEditForm({ ...editForm, nurse_name: e.target.value })}
                                             disabled
                                         />
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="edit-visit-date">Data da Visita</Label>
@@ -714,37 +698,34 @@ export default function AdminUsersPage() {
                                         <Input
                                             id="edit-value"
                                             type="number"
-                                            value={editForm.value}
+                                            value={editForm.value || 0}
                                             onChange={(e) => setEditForm({ ...editForm, value: Number.parseFloat(e.target.value) || 0 })}
                                         />
                                     </div>
                                 </div>
-
                                 <div>
                                     <Label htmlFor="edit-description">Descrição</Label>
                                     <Textarea
                                         id="edit-description"
-                                        value={editForm.description}
+                                        value={editForm.description || ""}
                                         onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                                         rows={3}
                                     />
                                 </div>
-
                                 <div>
                                     <Label htmlFor="edit-reason">Motivo</Label>
                                     <Textarea
                                         id="edit-reason"
-                                        value={editForm.reason}
+                                        value={editForm.reason || ""}
                                         onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })}
                                         rows={2}
                                     />
                                 </div>
-
                                 <div>
                                     <Label htmlFor="edit-cancel-reason">Motivo do Cancelamento</Label>
                                     <Textarea
                                         id="edit-cancel-reason"
-                                        value={editForm.cancel_reason}
+                                        value={editForm.cancel_reason || ""}
                                         onChange={(e) => setEditForm({ ...editForm, cancel_reason: e.target.value })}
                                         rows={2}
                                         placeholder="Deixe em branco se não cancelado"
@@ -758,7 +739,7 @@ export default function AdminUsersPage() {
                                         <Label htmlFor="edit-name">Nome</Label>
                                         <Input
                                             id="edit-name"
-                                            value={editForm.name}
+                                            value={editForm.name || ""}
                                             onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                                         />
                                     </div>
@@ -767,18 +748,17 @@ export default function AdminUsersPage() {
                                         <Input
                                             id="edit-email"
                                             type="email"
-                                            value={editForm.email}
+                                            value={editForm.email || ""}
                                             onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                                         />
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="edit-phone">Telefone</Label>
                                         <Input
                                             id="edit-phone"
-                                            value={editForm.phone}
+                                            value={editForm.phone || ""}
                                             onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
                                         />
                                     </div>
@@ -786,32 +766,29 @@ export default function AdminUsersPage() {
                                         <Label htmlFor="edit-cpf">CPF</Label>
                                         <Input
                                             id="edit-cpf"
-                                            value={editForm.cpf}
+                                            value={editForm.cpf || ""}
                                             onChange={(e) => setEditForm({ ...editForm, cpf: e.target.value })}
                                         />
                                     </div>
                                 </div>
-
                                 <div>
                                     <Label htmlFor="edit-address">Endereço</Label>
                                     <Input
                                         id="edit-address"
-                                        value={editForm.address}
+                                        value={editForm.address || ""}
                                         onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
                                     />
                                 </div>
-
                                 <div>
                                     <Label htmlFor="edit-password">Senha (deixe em branco para não alterar)</Label>
                                     <Input
                                         id="edit-password"
                                         type="password"
-                                        value={editForm.password}
+                                        value={editForm.password || ""}
                                         onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
                                         placeholder="Digite uma nova senha ou deixe em branco"
                                     />
                                 </div>
-
                                 {editingType === "nurse" && (
                                     <>
                                         <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
@@ -829,7 +806,7 @@ export default function AdminUsersPage() {
                                                             <path
                                                                 strokeLinecap="round"
                                                                 strokeLinejoin="round"
-                                                                d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 0121 12z"
+                                                                d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.745 3.745 0 013.296-1.043A3.745 3.745 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.745 3.745 0 011.043 3.296A3.745 3.745 0 0121 12z"
                                                             />
                                                         </svg>
                                                     </div>
@@ -844,19 +821,18 @@ export default function AdminUsersPage() {
                                                 </div>
                                                 <Checkbox
                                                     id="edit-verification"
-                                                    checked={editForm.verification_seal}
-                                                    onCheckedChange={(checked) => setEditForm({ ...editForm, verification_seal: checked })}
+                                                    checked={!!editForm.verification_seal}
+                                                    onCheckedChange={(checked) => setEditForm({ ...editForm, verification_seal: !!checked })}
                                                     className="h-6 w-6"
                                                 />
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <Label htmlFor="edit-license">COREN</Label>
                                                 <Input
                                                     id="edit-license"
-                                                    value={editForm.license_number}
+                                                    value={editForm.license_number || ""}
                                                     onChange={(e) => setEditForm({ ...editForm, license_number: e.target.value })}
                                                 />
                                             </div>
@@ -864,18 +840,17 @@ export default function AdminUsersPage() {
                                                 <Label htmlFor="edit-specialization">Especialização</Label>
                                                 <Input
                                                     id="edit-specialization"
-                                                    value={editForm.specialization}
+                                                    value={editForm.specialization || ""}
                                                     onChange={(e) => setEditForm({ ...editForm, specialization: e.target.value })}
                                                 />
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <Label htmlFor="edit-shift">Turno</Label>
                                                 <Input
                                                     id="edit-shift"
-                                                    value={editForm.shift}
+                                                    value={editForm.shift || ""}
                                                     onChange={(e) => setEditForm({ ...editForm, shift: e.target.value })}
                                                 />
                                             </div>
@@ -883,19 +858,18 @@ export default function AdminUsersPage() {
                                                 <Label htmlFor="edit-department">Departamento</Label>
                                                 <Input
                                                     id="edit-department"
-                                                    value={editForm.department}
+                                                    value={editForm.department || ""}
                                                     onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
                                                 />
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-3 gap-4">
                                             <div>
                                                 <Label htmlFor="edit-experience">Anos de Experiência</Label>
                                                 <Input
                                                     id="edit-experience"
                                                     type="number"
-                                                    value={editForm.years_experience}
+                                                    value={editForm.years_experience || 0}
                                                     onChange={(e) =>
                                                         setEditForm({ ...editForm, years_experience: Number.parseInt(e.target.value) || 0 })
                                                     }
@@ -906,7 +880,7 @@ export default function AdminUsersPage() {
                                                 <Input
                                                     id="edit-price"
                                                     type="number"
-                                                    value={editForm.price}
+                                                    value={editForm.price || 0}
                                                     onChange={(e) => setEditForm({ ...editForm, price: Number.parseFloat(e.target.value) || 0 })}
                                                 />
                                             </div>
@@ -914,18 +888,17 @@ export default function AdminUsersPage() {
                                                 <Label htmlFor="edit-pix">Chave PIX</Label>
                                                 <Input
                                                     id="edit-pix"
-                                                    value={editForm.pix_key}
+                                                    value={editForm.pix_key || ""}
                                                     onChange={(e) => setEditForm({ ...editForm, pix_key: e.target.value })}
                                                 />
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <Label htmlFor="edit-start-time">Horário Início</Label>
                                                 <Input
                                                     id="edit-start-time"
-                                                    value={editForm.start_time}
+                                                    value={editForm.start_time || ""}
                                                     onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
                                                 />
                                             </div>
@@ -933,17 +906,16 @@ export default function AdminUsersPage() {
                                                 <Label htmlFor="edit-end-time">Horário Fim</Label>
                                                 <Input
                                                     id="edit-end-time"
-                                                    value={editForm.end_time}
+                                                    value={editForm.end_time || ""}
                                                     onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
                                                 />
                                             </div>
                                         </div>
-
                                         <div>
                                             <Label htmlFor="edit-bio">Biografia</Label>
                                             <Textarea
                                                 id="edit-bio"
-                                                value={editForm.bio}
+                                                value={editForm.bio || ""}
                                                 onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
                                                 rows={3}
                                             />
@@ -955,16 +927,16 @@ export default function AdminUsersPage() {
                                     <div className="flex items-center space-x-2">
                                         <Checkbox
                                             id="edit-hidden"
-                                            checked={editForm.hidden}
-                                            onCheckedChange={(checked) => setEditForm({ ...editForm, hidden: checked })}
+                                            checked={!!editForm.hidden}
+                                            onCheckedChange={(checked) => setEditForm({ ...editForm, hidden: !!checked })}
                                         />
                                         <Label htmlFor="edit-hidden">Oculto</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <Checkbox
                                             id="edit-first-access"
-                                            checked={editForm.first_access}
-                                            onCheckedChange={(checked) => setEditForm({ ...editForm, first_access: checked })}
+                                            checked={!!editForm.first_access}
+                                            onCheckedChange={(checked) => setEditForm({ ...editForm, first_access: !!checked })}
                                         />
                                         <Label htmlFor="edit-first-access">Primeiro Acesso</Label>
                                     </div>
@@ -972,8 +944,7 @@ export default function AdminUsersPage() {
                             </>
                         )}
                     </div>
-
-                    <DialogFooter className="flex justify-between">
+                    <DialogFooter className="sm:justify-between items-center pt-4">
                         <Button variant="destructive" onClick={handleDeleteFromDialog}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Excluir
@@ -985,7 +956,7 @@ export default function AdminUsersPage() {
                             <Button
                                 onClick={handleUpdate}
                                 disabled={isUpdating}
-                                style={{ backgroundColor: "#15803d", color: "white" }}
+                                className="bg-[#15803d] text-white hover:bg-[#166534]"
                             >
                                 {isUpdating ? (
                                     <>
@@ -1016,7 +987,7 @@ export default function AdminUsersPage() {
                         <AlertDialogAction
                             onClick={handleDelete}
                             disabled={isDeleting}
-                            style={{ backgroundColor: "#ef4444", color: "white" }}
+                            className="bg-red-600 text-white hover:bg-red-700"
                         >
                             {isDeleting ? (
                                 <>
