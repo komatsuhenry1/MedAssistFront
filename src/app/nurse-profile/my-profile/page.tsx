@@ -219,7 +219,7 @@ export default function NurseMyProfile() {
         setIsSaving(true)
         try {
             const token = localStorage.getItem("token")
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logged/password"`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logged/password`, {
                 method: "PATCH",
                 headers: {
                     Authorization: `Bearer ${token}`,
