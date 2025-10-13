@@ -99,7 +99,6 @@ export default function NurseMyProfile() {
                 const nurseId = user._id
 
                 if (!user._id || !token) {
-                    console.log("caiu aqui!!!!!!!")
                     toast.error("Sessão inválida. Por favor, faça login novamente. NURSE ERROR")
                     localStorage.removeItem("token")
                     localStorage.removeItem("user")

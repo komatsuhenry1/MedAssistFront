@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-// MUDANÇA: Adicionados useRef e useEffect para a lógica da câmera
 import { useState, useRef, useEffect } from "react"
 import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
@@ -10,16 +9,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-// MUDANÇA: Adicionado o ícone de Câmera
 import { Upload, FileText, Shield, Heart, CheckCircle, Camera } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-// MUDANÇA: Adicionados os componentes para o Modal (Dialog)
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
-// MUDANÇA: NOVO COMPONENTE REUTILIZÁVEL
-// Componente para lidar com a entrada de documentos, oferecendo upload ou captura de foto.
-// Isso evita a repetição de código e torna o formulário principal mais limpo.
 const DocumentInput = ({
   field,
   label,
@@ -79,7 +73,6 @@ export default function RegisterPage() {
     password: "",
     license_number: "",
     specialization: "",
-    shift: "",
     department: "",
     years_experience: "",
     qualifications: null as File | null,
@@ -308,27 +301,12 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Informações Profissionais (Sem alterações) */}
-                  <div className="space-y-4">
+                    <div className="space-y-4">
                     <h3 className="text-lg font-semibold border-b pb-2">Informações Profissionais</h3>
-                    {/* ... campos de especialização, turno, etc. ... */}
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="specialization">Especialização *</Label>
                         <Input id="specialization" placeholder="Ex: Pediatria, Geriatria, UTI..." value={formData.specialization} onChange={(e) => handleInputChange("specialization", e.target.value)} required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="shift">Turno Preferencial *</Label>
-                        <Select onValueChange={(value) => handleInputChange("shift", value)} required>
-                          <SelectTrigger><SelectValue placeholder="Selecione o turno" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="manha">Manhã</SelectItem>
-                            <SelectItem value="tarde">Tarde</SelectItem>
-                            <SelectItem value="noite">Noite</SelectItem>
-                            <SelectItem value="integral">Integral</SelectItem>
-                            <SelectItem value="plantao">Plantão 12x36</SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
                     </div>
                     <div className="space-y-2">

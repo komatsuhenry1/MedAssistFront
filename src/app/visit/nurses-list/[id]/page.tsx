@@ -91,9 +91,6 @@ export default function NurseProfile() {
                 if (result.success && result.data) {
                     toast.success("Enfermeiro carregado com sucesso!")
                     setNurse(result.data)
-                    // 💡 Boa Prática: Preencher o campo de valor com o preço do enfermeiro
-                    // Para simplificar, vou usar o 'price' direto, mas em produção, 
-                    // você pode querer calcular um valor total.
                     setValue(result.data.price > 0 ? String(result.data.price) : "")
                 } else {
                     throw new Error(result.message || "Erro ao carregar dados do enfermeiro")
