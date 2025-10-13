@@ -91,10 +91,14 @@ export default function MyProfile() {
                     return
                 }
 
-                const user = JSON.parse(storedUser)
-                const patientId = user.id || user._id
+                console.log("entrou aqui")
 
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nurse/patient/${patientId}`, {
+                const user = JSON.parse(storedUser)
+                const patientId = user._id
+
+                console.log(" dsadsadasda")
+
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/nurse/patient/${patientId}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -133,7 +137,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/update`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/update`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -188,7 +192,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logged/password`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logged/password`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -231,7 +235,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/update`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/update`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -258,7 +262,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/update`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/update`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -285,7 +289,7 @@ export default function MyProfile() {
         try {
             setIsSaving(true)
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/delete`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/delete`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -356,7 +360,7 @@ export default function MyProfile() {
     }
 
     const avatarUrl = patient.profile_image_id
-        ? `${process.env.NEXT_PUBLIC_API_URL}/user/file/${patient.profile_image_id}`
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/file/${patient.profile_image_id}`
         : undefined
 
     return (

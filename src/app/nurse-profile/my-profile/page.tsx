@@ -94,17 +94,20 @@ export default function NurseMyProfile() {
                 const token = localStorage.getItem("token")
                 const user = JSON.parse(localStorage.getItem("user") || "{}")
 
-                if (!user.id || !token) {
-                    toast.error("Sessão inválida. Por favor, faça login novamente.")
+                console.log(user)
+
+                const nurseId = user._id
+
+                if (!user._id || !token) {
+                    console.log("caiu aqui!!!!!!!")
+                    toast.error("Sessão inválida. Por favor, faça login novamente. NURSE ERROR")
+                    localStorage.removeItem("token")
+                    localStorage.removeItem("user")
                     router.push("/login")
                     return
                 }
 
-                const userId = user._id || user.id
-
-                
-
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/nurse/${userId}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/nurse/${nurseId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

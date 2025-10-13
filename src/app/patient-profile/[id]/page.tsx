@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { User, Mail, Phone, MapPin, Calendar, Shield, CreditCard, Clock } from "lucide-react"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 interface PatientData {
     id: string
@@ -45,6 +45,7 @@ export default function PatientProfile() {
     useEffect(() => {
         const fetchPatientData = async () => {
             try {
+                console.log("Fetching patient data...")
                 setLoading(true)
                 const response = await fetch(`${API_BASE_URL}/nurse/patient/${patientId}`, {
                     method: "GET",
