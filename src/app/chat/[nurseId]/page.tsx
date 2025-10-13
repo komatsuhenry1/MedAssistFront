@@ -31,6 +31,12 @@ interface Nurse {
     available: boolean
 }
 
+interface User {
+    id: string
+    name: string
+}
+
+
 export default function ChatPage() {
     const params = useParams()
     const router = useRouter()
@@ -41,8 +47,9 @@ export default function ChatPage() {
     const [nurse, setNurse] = useState<Nurse | null>(null)
     const [loading, setLoading] = useState(true)
     const [sending, setSending] = useState(false)
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<User | null>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    
 
     // Auto-scroll to bottom when new messages arrive
     const scrollToBottom = () => {
