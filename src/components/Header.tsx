@@ -108,7 +108,7 @@ export function Header() {
               Enfermeiros
             </Link>
             <Link href="/confirmed-visits" className="text-sm font-medium hover:text-primary transition-colors">
-              Visitas Confirmadas
+              Minhas Visitas
             </Link>
           </>
         )
