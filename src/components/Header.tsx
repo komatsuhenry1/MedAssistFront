@@ -166,7 +166,7 @@ export function Header() {
         <div className="flex items-center space-x-2">
           {/* [MUDANÇA] Trocado <a> por <Link> e <img> por <Image> */}
           <Link href="/" className="flex items-center space-x-2">
-            <Image src="/logo.png" alt="Vita Logo" width={40} height={40} className="object-cover" />
+            <Image src="/logo.png" alt="Vita Logo" width={40} height={40} className="object-cover pl-2" />
             <span className="text-lg font-semibold hidden sm:block text-[#15803d]">Vita</span>
           </Link>
         </div>
