@@ -25,16 +25,16 @@ interface Message {
     read: boolean
 }
 
-// ALTERAÇÃO 1: Interface genérica para representar a pessoa com quem você está conversando
-interface ChatPartner {
+// Interface para a estrutura do Enfermeiro(a)
+interface Nurse {
     id: string
     name: string
-    specialization?: string // Opcional, pois um paciente não tem especialização
+    specialization: string
     image?: string
     available: boolean
 }
 
-// Interface para a estrutura do Usuário logado, agora com o campo 'role'
+// Interface para a estrutura do Usuário
 interface User {
     _id: string
     name: string
@@ -44,16 +44,13 @@ interface User {
 export default function ChatPage() {
     const params = useParams()
     const router = useRouter()
-    // O ID na URL agora é tratado de forma genérica, pode ser um nurseId ou patientId
-    const otherUserId = params.nurseId as string
+    const nurseId = params.nurseId as string
 
     // --- Estados do Componente ---
     const [messages, setMessages] = useState<Message[]>([])
     const [newMessage, setNewMessage] = useState("")
-    // ALTERAÇÃO 2: O estado 'nurse' foi renomeado para 'chatPartner' para ser mais genérico
-    const [chatPartner, setChatPartner] = useState<ChatPartner | null>(null)
+    const [nurse, setNurse] = useState<Nurse | null>(null)
     const [loading, setLoading] = useState(true)
-    const [sending, setSending] = useState(false)
     const [user, setUser] = useState<User | null>(null)
 
     // --- Referências ---
@@ -78,12 +75,10 @@ export default function ChatPage() {
         }
     }, [])
 
-    // ALTERAÇÃO 3: Lógica de busca de dados foi reestruturada para ser condicional
+    // Efeito para buscar os dados iniciais (histórico de mensagens e dados do enfermeiro)
     useEffect(() => {
         const fetchInitialData = async () => {
-            // A função agora espera o 'user' ser carregado para saber o 'role'
-            if (!user) return;
-
+            if (!user) return; // Espera o usuário ser carregado
             setLoading(true)
             try {
                 const token = localStorage.getItem("token")
@@ -93,36 +88,25 @@ export default function ChatPage() {
                 }
 
                 const headers = { Authorization: `Bearer ${token}` }
-                
+
                 let profileUrl = "";
-                // Lógica condicional: decide qual endpoint chamar
                 if (user.role === "PATIENT") {
-                    profileUrl = `${API_BASE_URL}/user/nurse/${otherUserId}`;
+                    profileUrl = `${API_BASE_URL}/user/nurse/${nurseId}`;
                 } else if (user.role === "NURSE") {
-                    profileUrl = `${API_BASE_URL}/nurse/patient/${otherUserId}`;
+                    profileUrl = `${API_BASE_URL}/nurse/patient/${nurseId}`;
                 }
 
-                // Busca o perfil do parceiro de chat (seja enfermeiro ou paciente)
                 if (profileUrl) {
-                    const profileResponse = await fetch(profileUrl, { headers, cache: "no-store" });
-                    if (profileResponse.ok) {
-                        const profileResult = await profileResponse.json();
-                        if (profileResult.success && profileResult.data) {
-                            const partnerData = profileResult.data;
-                            // Mapeia os dados para uma estrutura consistente
-                            setChatPartner({
-                                id: partnerData.id || partnerData._id,
-                                name: partnerData.name,
-                                specialization: partnerData.specialization, // Será undefined para pacientes
-                                image: partnerData.image || partnerData.profile_image_id,
-                                available: partnerData.available !== undefined ? partnerData.available : true,
-                            });
+                    const nurseResponse = await fetch(profileUrl, { headers, cache: "no-store" })
+                    if (nurseResponse.ok) {
+                        const nurseResult = await nurseResponse.json()
+                        if (nurseResult.success && nurseResult.data) {
+                            setNurse(nurseResult.data)
                         }
                     }
                 }
 
-                // Busca o histórico de mensagens
-                const messagesResponse = await fetch(`${API_BASE_URL}/chat/messages/${otherUserId}`, { headers, cache: "no-store" })
+                const messagesResponse = await fetch(`${API_BASE_URL}/chat/messages/${nurseId}`, { headers, cache: "no-store" })
                 if (messagesResponse.ok) {
                     const messagesResult = await messagesResponse.json()
                     if (messagesResult.success && messagesResult.data) {
@@ -137,13 +121,11 @@ export default function ChatPage() {
         }
 
         fetchInitialData()
-    }, [otherUserId, router, user]) // Adicionamos 'user' como dependência
+    }, [nurseId, router, user])
 
-    // ALTERAÇÃO 4: Lógica do WebSocket para ignorar as próprias mensagens
+    // Efeito principal para gerenciar a conexão WebSocket
     useEffect(() => {
-        // Só executa se já soubermos quem é o usuário logado
-        if (!user) return;
-
+        if (!user) return; // Espera o usuário ser carregado
         const token = localStorage.getItem("token");
         if (!token) return;
 
@@ -154,11 +136,12 @@ export default function ChatPage() {
         socket.onclose = () => console.log("WebSocket: Conexão encerrada.")
         socket.onerror = (error) => console.error("WebSocket: Erro detectado:", error)
 
+        // =================================================================
+        // ALTERAÇÃO 1: Adicionar filtro para ignorar as próprias mensagens
+        // =================================================================
         socket.onmessage = (event) => {
             const receivedMessage: Message = JSON.parse(event.data);
-            
-            // Ignora a mensagem se o remetente for o próprio usuário,
-            // pois ela já foi adicionada pela atualização otimista.
+            // Só adiciona a mensagem à tela se ela veio de OUTRA pessoa.
             if (receivedMessage.sender_id !== user._id) {
                 setMessages((prevMessages) => [...prevMessages, receivedMessage]);
             }
@@ -169,17 +152,19 @@ export default function ChatPage() {
                 socketRef.current.close()
             }
         }
-    }, [user]) // Adicionamos 'user' como dependência
+    }, [user]) // Adicionado 'user' como dependência
 
-    // ALTERAÇÃO 5: Lógica de "Atualização Otimista" ao enviar mensagem
+    // =================================================================
+    // ALTERAÇÃO 2: Implementar a "Atualização Otimista"
+    // =================================================================
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !socketRef.current || !socketRef.current.readyState || !user) {
             return
         }
-        
-        // Cria uma mensagem temporária para exibição imediata
+
+        // 1. Cria uma mensagem temporária com os dados que já temos
         const tempMessage: Message = {
-            id: Date.now().toString(), // Um ID único temporário
+            id: Date.now().toString(),
             sender_id: user._id,
             sender_name: user.name,
             sender_role: user.role,
@@ -188,17 +173,19 @@ export default function ChatPage() {
             read: false,
         };
 
-        // Adiciona a mensagem à tela instantaneamente
+        // 2. Adiciona a mensagem à tela IMEDIATAMENTE
         setMessages((prevMessages) => [...prevMessages, tempMessage]);
-        
+
+        // 3. Prepara o payload para enviar ao servidor
         const messagePayload = {
-            receiver_id: otherUserId,
+            receiver_id: nurseId,
             message: newMessage.trim(),
         };
 
-        // Envia a mensagem real para o servidor em segundo plano
+        // 4. Envia para o servidor em segundo plano
         socketRef.current.send(JSON.stringify(messagePayload));
-        
+
+        // 5. Limpa o input
         setNewMessage("");
     }
 
@@ -248,7 +235,7 @@ export default function ChatPage() {
         )
     }
 
-    const avatarUrl = chatPartner?.image ? `${API_BASE_URL}/user/file/${chatPartner.image}` : undefined
+    const avatarUrl = nurse?.image ? `${API_BASE_URL}/user/file/${nurse.image}` : undefined
 
     return (
         <div className="flex flex-col h-screen bg-muted/30">
@@ -262,20 +249,20 @@ export default function ChatPage() {
                     <div className="flex items-center gap-3 flex-1">
                         <div className="relative">
                             <Avatar className="h-12 w-12">
-                                <AvatarImage src={avatarUrl || "/placeholder.svg"} alt={chatPartner?.name} />
-                                <AvatarFallback>{chatPartner?.name?.charAt(0)}</AvatarFallback>
+                                <AvatarImage src={avatarUrl || "/placeholder.svg"} alt={nurse?.name} />
+                                <AvatarFallback>{nurse?.name?.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            {chatPartner?.available && (
+                            {nurse?.available && (
                                 <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
                             )}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                            <h2 className="font-semibold text-lg truncate">{chatPartner?.name}</h2>
-                            <p className="text-sm text-muted-foreground truncate">{chatPartner?.specialization}</p>
+                            <h2 className="font-semibold text-lg truncate">{nurse?.name}</h2>
+                            <p className="text-sm text-muted-foreground truncate">{nurse?.specialization}</p>
                         </div>
 
-                        {chatPartner?.available && (
+                        {nurse?.available && (
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 Online
                             </Badge>
@@ -355,16 +342,15 @@ export default function ChatPage() {
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            disabled={sending}
-                            className="flex-1"
+                            disabled={false} // Mantido como false para teste, mas você pode usar 'sending'
                         />
                         <Button
                             onClick={handleSendMessage}
-                            disabled={!newMessage.trim() || sending}
+                            disabled={!newMessage.trim()} // Mantido como false para teste
                             size="icon"
                             className="shrink-0"
                         >
-                            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            <Send className="h-4 w-4" />
                         </Button>
                     </div>
                 </CardContent>
