@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -11,8 +10,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Send, Loader2 } from "lucide-react"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8081/api/v1"
+// Definimos as URLs base para a API HTTP e para o WebSocket
+// Isso torna o código mais claro e fácil de manter.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_BASE_URL // <-- CORRIGIDO
 
+// Interface para a estrutura de uma mensagem
 interface Message {
     id: string
     sender_id: string
@@ -23,6 +26,7 @@ interface Message {
     read: boolean
 }
 
+// Interface para a estrutura do Enfermeiro(a)
 interface Nurse {
     id: string
     name: string
@@ -31,36 +35,40 @@ interface Nurse {
     available: boolean
 }
 
+// Interface para a estrutura do Usuário
 interface User {
     id: string
     name: string
 }
-
 
 export default function ChatPage() {
     const params = useParams()
     const router = useRouter()
     const nurseId = params.nurseId as string
 
+    // --- Estados do Componente ---
     const [messages, setMessages] = useState<Message[]>([])
     const [newMessage, setNewMessage] = useState("")
     const [nurse, setNurse] = useState<Nurse | null>(null)
     const [loading, setLoading] = useState(true)
     const [sending, setSending] = useState(false)
     const [user, setUser] = useState<User | null>(null)
-    const messagesEndRef = useRef<HTMLDivElement>(null)
-    
 
-    // Auto-scroll to bottom when new messages arrive
+    // --- Referências ---
+    const messagesEndRef = useRef<HTMLDivElement>(null)
+    const socketRef = useRef<WebSocket | null>(null)
+
+    // Função para rolar para a última mensagem
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
 
+    // Efeito para rolar para o final sempre que a lista de mensagens mudar
     useEffect(() => {
         scrollToBottom()
     }, [messages])
 
-    // Load user from localStorage
+    // Efeito para carregar os dados do usuário do localStorage
     useEffect(() => {
         const storedUser = localStorage.getItem("user")
         if (storedUser) {
@@ -68,9 +76,10 @@ export default function ChatPage() {
         }
     }, [])
 
-    // Fetch nurse info and chat history
+    // Efeito para buscar os dados iniciais (histórico de mensagens e dados do enfermeiro)
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchInitialData = async () => {
+            setLoading(true)
             try {
                 const token = localStorage.getItem("token")
                 if (!token) {
@@ -78,14 +87,10 @@ export default function ChatPage() {
                     return
                 }
 
-                // Fetch nurse info
-                const nurseResponse = await fetch(`${API_BASE_URL}/user/nurse/${nurseId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                    cache: "no-store",
-                })
+                const headers = { Authorization: `Bearer ${token}` }
 
+                // Busca informações do enfermeiro(a)
+                const nurseResponse = await fetch(`${API_BASE_URL}/user/nurse/${nurseId}`, { headers, cache: "no-store" })
                 if (nurseResponse.ok) {
                     const nurseResult = await nurseResponse.json()
                     if (nurseResult.success && nurseResult.data) {
@@ -93,14 +98,8 @@ export default function ChatPage() {
                     }
                 }
 
-                // Fetch chat messages
-                const messagesResponse = await fetch(`${API_BASE_URL}/chat/messages/${nurseId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                    cache: "no-store",
-                })
-
+                // Busca o histórico de mensagens
+                const messagesResponse = await fetch(`${API_BASE_URL}/chat/messages/${nurseId}`, { headers, cache: "no-store" })
                 if (messagesResponse.ok) {
                     const messagesResult = await messagesResponse.json()
                     if (messagesResult.success && messagesResult.data) {
@@ -108,59 +107,55 @@ export default function ChatPage() {
                     }
                 }
             } catch (error) {
-                console.error("Error fetching chat data:", error)
+                console.error("Error fetching initial chat data:", error)
             } finally {
                 setLoading(false)
             }
         }
 
-        fetchData()
-
-        // Poll for new messages every 3 seconds
-        const interval = setInterval(fetchData, 3000)
-        return () => clearInterval(interval)
+        fetchInitialData()
     }, [nurseId, router])
 
+    // Efeito principal para gerenciar a conexão WebSocket
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+    
+        const socket = new WebSocket(`${WS_BASE_URL}/ws/chat?token=${token}`);
+        socketRef.current = socket
+
+        socket.onopen = () => console.log("WebSocket: Conexão estabelecida.")
+        socket.onclose = () => console.log("WebSocket: Conexão encerrada.")
+        socket.onerror = (error) => console.error("WebSocket: Erro detectado:", error)
+
+        socket.onmessage = (event) => {
+            const receivedMessage: Message = JSON.parse(event.data)
+            setMessages((prevMessages) => [...prevMessages, receivedMessage])
+        }
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.close()
+            }
+        }
+    }, [])
+
+    // Função para enviar uma nova mensagem
     const handleSendMessage = async () => {
-        if (!newMessage.trim() || sending) return
+        if (!newMessage.trim() || !socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+            return
+        }
 
         setSending(true)
-        try {
-            const token = localStorage.getItem("token")
-            const response = await fetch(`${API_BASE_URL}/chat/messages`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    receiver_id: nurseId,
-                    message: newMessage.trim(),
-                }),
-            })
 
-            if (response.ok) {
-                const result = await response.json()
-                if (result.success) {
-                    // Add message to local state immediately for better UX
-                    const tempMessage: Message = {
-                        id: Date.now().toString(),
-                        sender_id: user?.id || "",
-                        sender_name: user?.name || "Você",
-                        sender_role: "PATIENT",
-                        message: newMessage.trim(),
-                        timestamp: new Date().toISOString(),
-                        read: false,
-                    }
-                    setMessages((prev) => [...prev, tempMessage])
-                    setNewMessage("")
-                }
-            }
-        } catch (error) {
-            console.error("Error sending message:", error)
-        } finally {
-            setSending(false)
+        const messagePayload = {
+            receiver_id: nurseId,
+            message: newMessage.trim(),
         }
+
+        socketRef.current.send(JSON.stringify(messagePayload))
+        setNewMessage("")
+        setSending(false)
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -170,6 +165,7 @@ export default function ChatPage() {
         }
     }
 
+    // Funções de formatação de data e hora
     const formatTime = (timestamp: string) => {
         const date = new Date(timestamp)
         return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
@@ -190,7 +186,7 @@ export default function ChatPage() {
         }
     }
 
-    // Group messages by date
+    // Agrupamento de mensagens por data
     const groupedMessages = messages.reduce((groups: { [key: string]: Message[] }, message) => {
         const date = formatDate(message.timestamp)
         if (!groups[date]) {
@@ -248,14 +244,12 @@ export default function ChatPage() {
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 {Object.entries(groupedMessages).map(([date, dateMessages]) => (
                     <div key={date} className="space-y-4">
-                        {/* Date separator */}
                         <div className="flex items-center justify-center">
                             <Badge variant="secondary" className="text-xs">
                                 {date}
                             </Badge>
                         </div>
 
-                        {/* Messages for this date */}
                         {dateMessages.map((message) => {
                             const isOwnMessage = message.sender_role === "PATIENT"
 
@@ -264,7 +258,7 @@ export default function ChatPage() {
                                     {!isOwnMessage && (
                                         <Avatar className="h-8 w-8 shrink-0">
                                             <AvatarImage src={avatarUrl || "/placeholder.svg"} alt={message.sender_name} />
-                                            <AvatarFallback>{message.sender_name.charAt(0)}</AvatarFallback>
+                                            <AvatarFallback>{message.sender_name?.charAt(0) || '?'}</AvatarFallback>
                                         </Avatar>
                                     )}
 
@@ -286,7 +280,7 @@ export default function ChatPage() {
 
                                     {isOwnMessage && (
                                         <Avatar className="h-8 w-8 shrink-0">
-                                            <AvatarFallback>{user?.name?.charAt(0) || "V"}</AvatarFallback>
+                                            <AvatarFallback>{user?.name?.charAt(0) || 'V'}</AvatarFallback>
                                         </Avatar>
                                     )}
                                 </div>
@@ -295,7 +289,7 @@ export default function ChatPage() {
                     </div>
                 ))}
 
-                {messages.length === 0 && (
+                {messages.length === 0 && !loading && (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                         <div className="text-muted-foreground mb-2">
                             <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
