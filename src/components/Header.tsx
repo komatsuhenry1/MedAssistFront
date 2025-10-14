@@ -117,6 +117,9 @@ export function Header() {
             <Link href="/confirmed-visits" className="text-sm font-medium hover:text-primary transition-colors">
               Minhas Visitas
             </Link>
+            <Link href="/sobre" className="text-sm font-medium hover:text-primary transition-colors">
+              Sobre
+            </Link>
           </>
         )
       case "NURSE":
@@ -127,6 +130,9 @@ export function Header() {
             </Link>
             <Link href="/visit/all-visits-patient" className="text-sm font-medium hover:text-primary transition-colors">
               Visitas
+            </Link>
+            <Link href="/sobre" className="text-sm font-medium hover:text-primary transition-colors">
+              Sobre
             </Link>
           </>
         )

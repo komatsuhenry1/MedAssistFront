@@ -11,9 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Send, Loader2 } from "lucide-react"
 
 // Definimos as URLs base para a API HTTP e para o WebSocket
-// Isso torna o código mais claro e fácil de manter.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_BASE_URL // <-- CORRIGIDO
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_BASE_URL
 
 // Interface para a estrutura de uma mensagem
 interface Message {
@@ -35,9 +34,11 @@ interface Nurse {
     available: boolean
 }
 
-// Interface para a estrutura do Usuário
+// =================================================================
+// ALTERAÇÃO 1: A interface User agora espera '_id'
+// =================================================================
 interface User {
-    id: string
+    _id: string // Alterado de 'id' para '_id'
     name: string
 }
 
@@ -72,9 +73,15 @@ export default function ChatPage() {
     useEffect(() => {
         const storedUser = localStorage.getItem("user")
         if (storedUser) {
-            setUser(JSON.parse(storedUser))
+            const parsedUser = JSON.parse(storedUser);
+            // =================================================================
+            // ALTERAÇÃO 2: O console.log agora busca '_id'
+            // =================================================================
+            console.log("ID do usuário no localStorage:", parsedUser._id); // Alterado de 'parsedUser.id'
+            setUser(parsedUser);
         }
     }, [])
+
 
     // Efeito para buscar os dados iniciais (histórico de mensagens e dados do enfermeiro)
     useEffect(() => {
@@ -120,7 +127,7 @@ export default function ChatPage() {
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) return;
-    
+
         const socket = new WebSocket(`${WS_BASE_URL}/ws/chat?token=${token}`);
         socketRef.current = socket
 
@@ -129,8 +136,9 @@ export default function ChatPage() {
         socket.onerror = (error) => console.error("WebSocket: Erro detectado:", error)
 
         socket.onmessage = (event) => {
-            const receivedMessage: Message = JSON.parse(event.data)
-            setMessages((prevMessages) => [...prevMessages, receivedMessage])
+            const receivedMessage: Message = JSON.parse(event.data);
+            console.log("sender_id da mensagem no WebSocket:", receivedMessage.sender_id);
+            setMessages((prevMessages) => [...prevMessages, receivedMessage]);
         }
 
         return () => {
@@ -142,7 +150,7 @@ export default function ChatPage() {
 
     // Função para enviar uma nova mensagem
     const handleSendMessage = async () => {
-        if (!newMessage.trim() || !socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+        if (!newMessage.trim() || !socketRef.current || !socketRef.current.readyState) {
             return
         }
 
@@ -251,7 +259,10 @@ export default function ChatPage() {
                         </div>
 
                         {dateMessages.map((message) => {
-                            const isOwnMessage = message.sender_role === "PATIENT"
+                            // =================================================================
+                            // ALTERAÇÃO 3: A comparação agora usa 'user?._id'
+                            // =================================================================
+                            const isOwnMessage = message.sender_id === user?._id;
 
                             return (
                                 <div key={message.id} className={`flex gap-2 ${isOwnMessage ? "justify-end" : "justify-start"}`}>
