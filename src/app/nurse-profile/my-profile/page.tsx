@@ -32,7 +32,7 @@ interface NurseProfile {
     email: string
     phone: string
     address: string
-    license_number: string
+    coren: string
     years_experience: number
     department: string
     bio: string
@@ -58,7 +58,7 @@ export default function NurseMyProfile() {
         email: "",
         phone: "",
         address: "",
-        license_number: "",
+        coren: "",
         years_experience: 0,
         department: "",
         bio: "",
@@ -126,7 +126,7 @@ export default function NurseMyProfile() {
                         email: user.email || "", // Email from localStorage since API doesn't return it
                         phone: data.phone || "", // Will be empty if API doesn't return it
                         address: data.location || "", // Map 'location' from API to 'address' in form
-                        license_number: data.license_number || "", // Will be empty if API doesn't return it
+                        coren: data.coren || "", // Will be empty if API doesn't return it
                         years_experience: data.experience || 0, // Map 'experience' from API to 'years_experience'
                         department: data.department || "",
                         bio: data.bio || "",
@@ -163,7 +163,7 @@ export default function NurseMyProfile() {
                     email: profileForm.email,
                     phone: profileForm.phone,
                     address: profileForm.address,
-                    license_number: profileForm.license_number,
+                    coren: profileForm.coren,
                     years_experience: profileForm.years_experience,
                     department: profileForm.department,
                     bio: profileForm.bio,
@@ -488,8 +488,8 @@ export default function NurseMyProfile() {
                                                 <Label htmlFor="license">COREN</Label>
                                                 <Input
                                                     id="license"
-                                                    value={profileForm.license_number}
-                                                    onChange={(e) => setProfileForm({ ...profileForm, license_number: e.target.value })}
+                                                    value={profileForm.coren}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, coren: e.target.value })}
                                                     placeholder="Digite seu COREN"
                                                 />
                                             </div>

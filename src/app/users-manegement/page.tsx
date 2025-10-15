@@ -59,7 +59,7 @@ interface Nurse {
     pix_key: string
     password: string
     verification_seal: boolean
-    license_number: string
+    coren: string
     specialization: string
     shift: string
     department: string
@@ -200,7 +200,7 @@ export default function AdminUsersPage() {
                 pix_key: nurse.pix_key,
                 password: "",
                 verification_seal: nurse.verification_seal,
-                license_number: nurse.license_number,
+                coren: nurse.coren,
                 specialization: nurse.specialization,
                 shift: nurse.shift,
                 department: nurse.department,
@@ -832,8 +832,8 @@ export default function AdminUsersPage() {
                                                 <Label htmlFor="edit-license">COREN</Label>
                                                 <Input
                                                     id="edit-license"
-                                                    value={editForm.license_number || ""}
-                                                    onChange={(e) => setEditForm({ ...editForm, license_number: e.target.value })}
+                                                    value={editForm.coren || ""}
+                                                    onChange={(e) => setEditForm({ ...editForm, coren: e.target.value })}
                                                 />
                                             </div>
                                             <div>

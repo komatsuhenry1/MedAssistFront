@@ -170,7 +170,7 @@ export default function RegisterPage() {
     address: "",
     cpf: "",
     password: "",
-    license_number: "",
+    coren: "",
     specialization: "",
     department: "",
     years_experience: "",
@@ -186,7 +186,7 @@ export default function RegisterPage() {
     cpf: "",
     password: "",
     phone: "",
-    license_number: "",
+    coren: "",
   })
 
   const [previews, setPreviews] = useState({
@@ -305,11 +305,11 @@ export default function RegisterPage() {
         ...prev,
         phone: cleaned.length >= 10 ? "" : "Telefone incompleto",
       }))
-    } else if (field === "license_number" && value) {
+    } else if (field === "coren" && value) {
       const corenRegex = /^COREN-[A-Z]{2}\s?\d{4,6}$/i
       setValidationErrors((prev) => ({
         ...prev,
-        license_number: corenRegex.test(value) ? "" : "Formato: COREN-UF 123456",
+        coren: corenRegex.test(value) ? "" : "Formato: COREN-UF 123456",
       }))
     }
   }
@@ -337,7 +337,7 @@ export default function RegisterPage() {
     const passwordValidation = validatePassword(formData.password)
     const phoneValid = formData.phone.replace(/\D/g, "").length >= 10
     const corenRegex = /^COREN-[A-Z]{2}\s?\d{4,6}$/i
-    const corenValid = corenRegex.test(formData.license_number)
+    const corenValid = corenRegex.test(formData.coren)
 
     if (!emailValid || !cpfValid || !passwordValidation.isValid || !phoneValid || !corenValid) {
       setValidationErrors({
@@ -345,7 +345,7 @@ export default function RegisterPage() {
         cpf: cpfValid ? "" : "CPF inválido",
         password: passwordValidation.isValid ? "" : "Senha não atende aos requisitos",
         phone: phoneValid ? "" : "Telefone incompleto",
-        license_number: corenValid ? "" : "Formato: COREN-UF 123456",
+        coren: corenValid ? "" : "Formato: COREN-UF 123456",
       })
       toast.error("Por favor, corrija os erros no formulário")
       return
@@ -362,7 +362,7 @@ export default function RegisterPage() {
     formDataToSend.append("address", formData.address)
     formDataToSend.append("cpf", formData.cpf.replace(/\D/g, ""))
     formDataToSend.append("password", formData.password)
-    formDataToSend.append("license_number", formData.license_number)
+    formDataToSend.append("coren", formData.coren)
     formDataToSend.append("specialization", formData.specialization)
     formDataToSend.append("department", formData.department)
     formDataToSend.append("years_experience", formData.years_experience)
@@ -671,25 +671,25 @@ export default function RegisterPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="license_number">Número COREN *</Label>
+                        <Label htmlFor="coren">Número COREN *</Label>
                         <div className="relative">
                           <Input
-                            id="license_number"
+                            id="coren"
                             placeholder="Ex: COREN-SP 123456"
-                            value={formData.license_number}
-                            onChange={(e) => handleInputChange("license_number", e.target.value)}
+                            value={formData.coren}
+                            onChange={(e) => handleInputChange("coren", e.target.value)}
                             className={
-                              validationErrors.license_number
+                              validationErrors.coren
                                 ? "border-red-500"
-                                : formData.license_number && !validationErrors.license_number
+                                : formData.coren && !validationErrors.coren
                                   ? "border-green-500"
                                   : ""
                             }
                             required
                           />
-                          {formData.license_number && (
+                          {formData.coren && (
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              {validationErrors.license_number ? (
+                              {validationErrors.coren ? (
                                 <XCircle className="h-5 w-5 text-red-500" />
                               ) : (
                                 <CheckCircle className="h-5 w-5 text-green-500" />
@@ -697,8 +697,8 @@ export default function RegisterPage() {
                             </div>
                           )}
                         </div>
-                        {validationErrors.license_number && (
-                          <p className="text-xs text-red-500">{validationErrors.license_number}</p>
+                        {validationErrors.coren && (
+                          <p className="text-xs text-red-500">{validationErrors.coren}</p>
                         )}
                       </div>
                     </div>
