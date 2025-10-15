@@ -131,6 +131,9 @@ export function Header() {
             <Link href="/visit/all-visits-patient" className="text-sm font-medium hover:text-primary transition-colors">
               Visitas
             </Link>
+            <Link href="/chat/nurse-chats" className="text-sm font-medium hover:text-primary transition-colors">
+              Conversas
+            </Link>
             <Link href="/sobre" className="text-sm font-medium hover:text-primary transition-colors">
               Sobre
             </Link>
