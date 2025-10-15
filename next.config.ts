@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: '192.168.18.139',
         port: '8081',
-        pathname: '/api/v1/user/file/**',
+        pathname: '/**',
       },
       {
         protocol: 'http',

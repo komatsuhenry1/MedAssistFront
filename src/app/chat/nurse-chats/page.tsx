@@ -282,16 +282,16 @@ export default function ChatsPage() {
                 {/* --- MUDANÇA: Header da sidebar atualizado com botão --- */}
                 <div
                     className="flex items-center gap-4 p-4 border-b"
-                    style={{ backgroundColor: "#15803d", borderColor: "#e5e7eb" }}
+                    style={{ backgroundColor: "#ffffff", borderColor: "#e5e7eb" }}
                 >
                     <button
                         onClick={() => router.back()}
-                        className="p-2 rounded-full hover:bg-green-700 transition-colors"
+                        className="p-2 rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors"
                         aria-label="Voltar"
                     >
                         <ArrowLeft className="h-6 w-6 text-white" />
                     </button>
-                    <h1 className="text-xl font-semibold text-white">Conversas</h1>
+                    <h1 className="text-xl font-semibold text-black">Conversas</h1>
                 </div>
 
                 <div className="p-3 border-b" style={{ borderColor: "#e5e7eb" }}>

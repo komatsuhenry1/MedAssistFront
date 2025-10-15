@@ -29,6 +29,17 @@ interface ApiResponse {
   success: boolean
 }
 
+const heroStyle = {
+  backgroundImage: `
+    linear-gradient(rgba(21, 128, 61, 0.7), rgba(83, 83, 83, 0.8)),
+    url('/equipe_enfermeiros.png')
+  `,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  color: "white",
+  padding: "5rem 0",
+}
+
 export default function PatientDashboard() {
   const [nurses, setNurses] = useState<Nurse[]>([])
   const [loading, setLoading] = useState(true)
@@ -170,13 +181,7 @@ export default function PatientDashboard() {
     <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
       <Header />
 
-      <section
-        style={{
-          background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
-          color: "white",
-          padding: "4rem 1rem 2rem",
-        }}
-      >
+      <section style={heroStyle} >
         <div style={{ maxWidth: "1200px", margin: "0 auto", textAlign: "center" }}>
           <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Encontre o Enfermeiro Ideal</h1>
           <p style={{ fontSize: "1.25rem", opacity: 0.9, maxWidth: "600px", margin: "0 auto" }}>
