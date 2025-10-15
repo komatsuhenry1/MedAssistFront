@@ -63,6 +63,18 @@ const DocumentInput = ({
   </div>
 )
 
+const heroStyle = {
+  backgroundImage: `
+    linear-gradient(rgba(21, 128, 61, 0.7), rgba(83, 83, 83, 0.8)),
+    url('/sobre_imagem.png')
+  `,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  color: "white",
+  padding: "5rem 0",
+}
+
+
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
     name: "",
@@ -208,7 +220,7 @@ export default function RegisterPage() {
     <>
       <Header />
 
-      <section className="bg-gradient-to-br from-primary to-primary/90 text-primary-foreground py-16">
+      <section style={heroStyle}>
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-4 text-sm font-medium">
             Junte-se à Nossa Equipe

@@ -7,14 +7,21 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 
 export default function Home() {
+  const heroStyle = {
+    backgroundImage: `
+      linear-gradient(rgba(21, 128, 61, 0.7), rgba(83, 83, 83, 0.8)),
+      url('/sobre_imagem.png')
+    `,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    color: "white",
+    padding: "5rem 0",
+  }
   return (  
     <>
       <Header />
 
-      {/* Hero Section */}
-      <section
-        style={{ background: "linear-gradient(to bottom right, #15803d, #16a34a)", color: "white", padding: "5rem 0" }}
-      >
+      <section style={heroStyle}>
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-4xl mx-auto">
             <Badge
