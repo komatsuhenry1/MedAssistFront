@@ -125,6 +125,9 @@ export function Header() {
       case "NURSE":
         return (
           <>
+            <Link href="/sobre" className="text-sm font-medium hover:text-primary transition-colors">
+              Sobre
+            </Link>
             <Link href="/dashboard/nurse" className="text-sm font-medium hover:text-primary transition-colors">
               Dashboard
             </Link>
@@ -134,15 +137,11 @@ export function Header() {
             <Link href="/chat/nurse-chats" className="text-sm font-medium hover:text-primary transition-colors">
               Conversas
             </Link>
-            <Link href="/sobre" className="text-sm font-medium hover:text-primary transition-colors">
-              Sobre
-            </Link>
           </>
         )
       case "ADMIN":
         return (
           <>
-            {baseLinks}
             <Link href="/dashboard/admin" className="text-sm font-medium hover:text-primary transition-colors">
               Dashboard
             </Link>
@@ -293,13 +292,13 @@ export function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-40 rounded-xl shadow-lg">
                     <DropdownMenuItem asChild>
-                      <Link href="/register-patient" className="w-full justify-start">
+                      <Link href="/register/patient" className="w-full justify-start">
                         Paciente
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/register-nurse" className="w-full justify-start">
+                      <Link href="/register/nurse" className="w-full justify-start">
                         Enfermeiro(a)
                       </Link>
                     </DropdownMenuItem>

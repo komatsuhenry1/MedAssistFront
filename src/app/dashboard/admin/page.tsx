@@ -57,6 +57,17 @@ interface DocumentsResponse {
   success: boolean
 }
 
+const heroStyle = {
+  backgroundImage: `
+    linear-gradient(rgba(21, 128, 61, 0.7), rgba(83, 83, 83, 0.8)),
+    url('/dashboard_imagem.png')
+  `,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  color: "white",
+  padding: "5rem 0",
+}
+
 const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [selectedNurseDocuments, setSelectedNurseDocuments] = useState<Document[]>([])
@@ -252,13 +263,7 @@ const AdminDashboard = () => {
       <Header />
 
       {/* Hero Section */}
-      <section
-        style={{
-          background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
-          color: "white",
-          padding: "4rem 1rem 2rem",
-        }}
-      >
+      <section style={heroStyle}>
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
           <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Dashboard Administrativo</h1>
           <p style={{ fontSize: "1.25rem", opacity: 0.9 }}>

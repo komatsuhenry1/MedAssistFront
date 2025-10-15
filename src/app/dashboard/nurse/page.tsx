@@ -42,6 +42,17 @@ interface NurseData {
   }>
 }
 
+const heroStyle = {
+  backgroundImage: `
+    linear-gradient(rgba(21, 128, 61, 0.7), rgba(83, 83, 83, 0.8)),
+    url('/dashboard_imagem.png')
+  `,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  color: "white",
+  padding: "5rem 0",
+}
+
 export default function NurseDashboard() {
   const router = useRouter()
   const [nurseData, setNurseData] = useState<NurseData | null>(null)
@@ -232,11 +243,7 @@ export default function NurseDashboard() {
 
       {/* Hero Section */}
       <section
-        style={{
-          background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
-          color: "white",
-          padding: "4rem 1rem 2rem",
-        }}
+        style={heroStyle}
       >
         <div style={{ maxWidth: "1200px", margin: "0 auto", textAlign: "center" }}>
           <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Dashboard do Enfermeiro</h1>
