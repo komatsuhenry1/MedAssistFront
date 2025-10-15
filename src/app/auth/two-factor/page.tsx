@@ -91,6 +91,42 @@ export default function ValidateCodePage() {
         }
     }
 
+    const HandleResendCode = async () => {
+        if (!email) {
+            toast.error("Por favor, preencha o email.")
+            return
+        }
+
+        setIsLoading(true)
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/code`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    email,
+                }),
+            })
+
+            const result = await response.json()
+
+            if (response.ok && result.success) {
+                toast.success(result.message)
+            } else {
+                toast.error(result.message || "Erro ao reenviar código. Tente novamente.")
+            }} catch (error) {
+            console.error("Error resending code:", error)
+            toast.error("Erro ao reenviar código. Verifique sua conexão.")
+                } finally {
+            setIsLoading(false)
+        }
+    }
+
+
+
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 p-4">
             <Card className="w-full max-w-md">
@@ -139,7 +175,7 @@ export default function ValidateCodePage() {
                                 <button
                                     type="button"
                                     className="text-[#15803d] hover:underline font-medium"
-                                    onClick={() => toast.info("Funcionalidade de reenvio em desenvolvimento")}
+                                onClick={HandleResendCode}
                                 >
                                     Reenviar
                                 </button>

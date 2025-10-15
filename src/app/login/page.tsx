@@ -45,7 +45,9 @@ export default function LoginPage() {
         const user = data.data.user
         const token = data.data.token
 
-        console.log(data.data.user.email)
+        console.log("====")
+        console.log(data)
+        console.log("====")
 
         if (user.role === "NURSE") {
           if (data.data.user.two_factor){
