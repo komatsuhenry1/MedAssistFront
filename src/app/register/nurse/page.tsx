@@ -181,7 +181,7 @@ export default function RegisterPage() {
     uf: "",
     cpf: "",
     password: "",
-    license_number: "",
+    coren: "", // MUDANÇA
     specialization: "",
     department: "",
     years_experience: "",
@@ -197,7 +197,7 @@ export default function RegisterPage() {
     cpf: "",
     password: "",
     phone: "",
-    license_number: "",
+    coren: "", // MUDANÇA
     cep: "",
   })
 
@@ -310,11 +310,12 @@ export default function RegisterPage() {
         ...prev,
         phone: cleaned.length >= 10 ? "" : "Telefone incompleto",
       }))
-    } else if (field === "license_number" && value) {
+    } else if (field === "coren" && value) {
+      // MUDANÇA
       const corenRegex = /^COREN-[A-Z]{2}\s?\d{4,6}$/i
       setValidationErrors((prev) => ({
         ...prev,
-        license_number: corenRegex.test(value) ? "" : "Formato: COREN-UF 123456",
+        coren: corenRegex.test(value) ? "" : "Formato: COREN-UF 123456",
       }))
     } else if (field === "cep" && value) {
       const cleaned = value.replace(/\D/g, "")
@@ -347,7 +348,7 @@ export default function RegisterPage() {
     const passwordValidation = validatePassword(formData.password)
     const phoneValid = formData.phone.replace(/\D/g, "").length >= 10
     const corenRegex = /^COREN-[A-Z]{2}\s?\d{4,6}$/i
-    const corenValid = corenRegex.test(formData.license_number)
+    const corenValid = corenRegex.test(formData.coren) // MUDANÇA
     const cepValid = formData.cep.replace(/\D/g, "").length === 8
 
     if (!emailValid || !cpfValid || !passwordValidation.isValid || !phoneValid || !corenValid || !cepValid) {
@@ -356,7 +357,7 @@ export default function RegisterPage() {
         cpf: cpfValid ? "" : "CPF inválido",
         password: passwordValidation.isValid ? "" : "Senha não atende aos requisitos",
         phone: phoneValid ? "" : "Telefone incompleto",
-        license_number: corenValid ? "" : "Formato: COREN-UF 123456",
+        coren: corenValid ? "" : "Formato: COREN-UF 123456", // MUDANÇA
         cep: cepValid ? "" : "CEP incompleto",
       })
       toast.error("Por favor, corrija os erros no formulário")
@@ -379,8 +380,7 @@ export default function RegisterPage() {
     formDataToSend.append("uf", formData.uf)
     formDataToSend.append("cpf", formData.cpf.replace(/\D/g, ""))
     formDataToSend.append("password", formData.password)
-    // MUDANÇA: O nome do campo foi alterado para "coren"
-    formDataToSend.append("coren", formData.license_number)
+    formDataToSend.append("coren", formData.coren) // MUDANÇA
     formDataToSend.append("specialization", formData.specialization)
     formDataToSend.append("department", formData.department)
     formDataToSend.append("years_experience", formData.years_experience)
@@ -403,6 +403,7 @@ export default function RegisterPage() {
         toast.success("Cadastro solicitado com sucesso!", {
           description: "Você receberá um email quando seu cadastro for aprovado.",
         })
+        window.location.href = "/login"
       } else {
         const errorData = await response.json()
         toast.error("Erro ao cadastrar", {
@@ -488,7 +489,7 @@ export default function RegisterPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Informações Pessoais */}
+                  {/* Informações Pessoais (Sem alterações) */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold border-b pb-2">Informações Pessoais</h3>
 
@@ -711,24 +712,61 @@ export default function RegisterPage() {
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="neighborhood">Bairro *</Label>
-                          <Input
-                            id="neighborhood"
-                            placeholder="Nome do bairro"
-                            value={formData.neighborhood}
-                            onChange={(e) => handleInputChange("neighborhood", e.target.value)}
-                            required
-                          />
+                          <Select onValueChange={(value) => handleInputChange("neighborhood", value)} required>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o bairro" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Centro">Centro</SelectItem>
+                              <SelectItem value="Vila Prudente">Vila Prudente</SelectItem>
+                              <SelectItem value="Tatuapé">Tatuapé</SelectItem>
+                              <SelectItem value="Mooca">Mooca</SelectItem>
+                              <SelectItem value="Ipiranga">Ipiranga</SelectItem>
+                              <SelectItem value="Vila Mariana">Vila Mariana</SelectItem>
+                              <SelectItem value="Pinheiros">Pinheiros</SelectItem>
+                              <SelectItem value="Jardins">Jardins</SelectItem>
+                              <SelectItem value="Moema">Moema</SelectItem>
+                              <SelectItem value="Itaim Bibi">Itaim Bibi</SelectItem>
+                              <SelectItem value="Brooklin">Brooklin</SelectItem>
+                              <SelectItem value="Santo Amaro">Santo Amaro</SelectItem>
+                              <SelectItem value="Butantã">Butantã</SelectItem>
+                              <SelectItem value="Lapa">Lapa</SelectItem>
+                              <SelectItem value="Santana">Santana</SelectItem>
+                              <SelectItem value="Vila Guilherme">Vila Guilherme</SelectItem>
+                              <SelectItem value="Penha">Penha</SelectItem>
+                              <SelectItem value="São Miguel">São Miguel</SelectItem>
+                              <SelectItem value="Outro">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         <div className="space-y-2">
                           <Label htmlFor="city">Cidade *</Label>
-                          <Input
-                            id="city"
-                            placeholder="Nome da cidade"
-                            value={formData.city}
-                            onChange={(e) => handleInputChange("city", e.target.value)}
-                            required
-                          />
+                          <Select onValueChange={(value) => handleInputChange("city", value)} required>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a cidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="São Paulo">São Paulo</SelectItem>
+                              <SelectItem value="Rio de Janeiro">Rio de Janeiro</SelectItem>
+                              <SelectItem value="Belo Horizonte">Belo Horizonte</SelectItem>
+                              <SelectItem value="Brasília">Brasília</SelectItem>
+                              <SelectItem value="Curitiba">Curitiba</SelectItem>
+                              <SelectItem value="Porto Alegre">Porto Alegre</SelectItem>
+                              <SelectItem value="Salvador">Salvador</SelectItem>
+                              <SelectItem value="Fortaleza">Fortaleza</SelectItem>
+                              <SelectItem value="Recife">Recife</SelectItem>
+                              <SelectItem value="Manaus">Manaus</SelectItem>
+                              <SelectItem value="Belém">Belém</SelectItem>
+                              <SelectItem value="Goiânia">Goiânia</SelectItem>
+                              <SelectItem value="Campinas">Campinas</SelectItem>
+                              <SelectItem value="São Bernardo do Campo">São Bernardo do Campo</SelectItem>
+                              <SelectItem value="Santo André">Santo André</SelectItem>
+                              <SelectItem value="Guarulhos">Guarulhos</SelectItem>
+                              <SelectItem value="Osasco">Osasco</SelectItem>
+                              <SelectItem value="Outra">Outra</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>
@@ -754,7 +792,8 @@ export default function RegisterPage() {
                       {formData.password && (
                         <div className="text-xs space-y-1 mt-2">
                           <div
-                            className={`flex items-center gap-2 ${passwordValidation.hasMinLength ? "text-green-600" : "text-gray-500"}`}
+                            className={`flex items-center gap-2 ${passwordValidation.hasMinLength ? "text-green-600" : "text-gray-500"
+                              }`}
                           >
                             {passwordValidation.hasMinLength ? (
                               <CheckCircle className="h-3 w-3" />
@@ -764,7 +803,8 @@ export default function RegisterPage() {
                             Mínimo 8 caracteres
                           </div>
                           <div
-                            className={`flex items-center gap-2 ${passwordValidation.hasUpperCase ? "text-green-600" : "text-gray-500"}`}
+                            className={`flex items-center gap-2 ${passwordValidation.hasUpperCase ? "text-green-600" : "text-gray-500"
+                              }`}
                           >
                             {passwordValidation.hasUpperCase ? (
                               <CheckCircle className="h-3 w-3" />
@@ -774,7 +814,8 @@ export default function RegisterPage() {
                             Uma letra maiúscula
                           </div>
                           <div
-                            className={`flex items-center gap-2 ${passwordValidation.hasLowerCase ? "text-green-600" : "text-gray-500"}`}
+                            className={`flex items-center gap-2 ${passwordValidation.hasLowerCase ? "text-green-600" : "text-gray-500"
+                              }`}
                           >
                             {passwordValidation.hasLowerCase ? (
                               <CheckCircle className="h-3 w-3" />
@@ -784,7 +825,8 @@ export default function RegisterPage() {
                             Uma letra minúscula
                           </div>
                           <div
-                            className={`flex items-center gap-2 ${passwordValidation.hasNumber ? "text-green-600" : "text-gray-500"}`}
+                            className={`flex items-center gap-2 ${passwordValidation.hasNumber ? "text-green-600" : "text-gray-500"
+                              }`}
                           >
                             {passwordValidation.hasNumber ? (
                               <CheckCircle className="h-3 w-3" />
@@ -794,7 +836,8 @@ export default function RegisterPage() {
                             Um número
                           </div>
                           <div
-                            className={`flex items-center gap-2 ${passwordValidation.hasSpecialChar ? "text-green-600" : "text-gray-500"}`}
+                            className={`flex items-center gap-2 ${passwordValidation.hasSpecialChar ? "text-green-600" : "text-gray-500"
+                              }`}
                           >
                             {passwordValidation.hasSpecialChar ? (
                               <CheckCircle className="h-3 w-3" />
@@ -808,25 +851,25 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="license_number">Número COREN *</Label>
+                      <Label htmlFor="coren">Número COREN *</Label>
                       <div className="relative">
                         <Input
-                          id="license_number"
+                          id="coren"
                           placeholder="Ex: COREN-SP 123456"
-                          value={formData.license_number}
-                          onChange={(e) => handleInputChange("license_number", e.target.value)}
+                          value={formData.coren}
+                          onChange={(e) => handleInputChange("coren", e.target.value)}
                           className={
-                            validationErrors.license_number
+                            validationErrors.coren
                               ? "border-red-500"
-                              : formData.license_number && !validationErrors.license_number
+                              : formData.coren && !validationErrors.coren
                                 ? "border-green-500"
                                 : ""
                           }
                           required
                         />
-                        {formData.license_number && (
+                        {formData.coren && (
                           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            {validationErrors.license_number ? (
+                            {validationErrors.coren ? (
                               <XCircle className="h-5 w-5 text-red-500" />
                             ) : (
                               <CheckCircle className="h-5 w-5 text-green-500" />
@@ -834,9 +877,7 @@ export default function RegisterPage() {
                           </div>
                         )}
                       </div>
-                      {validationErrors.license_number && (
-                        <p className="text-xs text-red-500">{validationErrors.license_number}</p>
-                      )}
+                      {validationErrors.coren && <p className="text-xs text-red-500">{validationErrors.coren}</p>}
                     </div>
                   </div>
 

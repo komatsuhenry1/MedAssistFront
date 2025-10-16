@@ -18,17 +18,6 @@ const validateEmail = (email: string) => {
   return emailRegex.test(email)
 }
 
-const heroStyle = {
-  backgroundImage: `
-    linear-gradient(rgba(21, 128, 61, 0.7), rgba(83, 83, 83, 0.8)),
-    url('/sobre_imagem.png')
-  `,
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  color: "white",
-  padding: "5rem 0",
-}
-
 const validateCPF = (cpf: string) => {
   const cleanCPF = cpf.replace(/\D/g, "")
   if (cleanCPF.length !== 11) return false
@@ -211,37 +200,26 @@ export default function PatientRegisterPage() {
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
 
-      const response = await fetch(`${apiBaseUrl}/auth/user`, {
+      const response = await fetch(`${apiBaseUrl}/auth/patient`, {
         method: "POST",
-        // MUDANÇA 4: Remover o header 'Content-Type'. O navegador o definirá
-        // automaticamente para 'multipart/form-data' com o boundary correto.
-        // headers: { "Content-Type": "application/json" },
-
-        // MUDANÇA 5: Usar o objeto FormData como corpo da requisição.
         body: dataToSend,
       })
 
       const data = await response.json()
-      if (response.ok) {
-        setTimeout(() => {
-          window.location.href = "/login"
-        }, 1500) // Espera 1.5 segundos antes de redirecionar
-        toast.success("Conta criada com sucesso! Você será redirecionado para o login.")
-    }
 
       if (!response.ok) {
         throw new Error(data.message || "Erro ao criar conta. Tente novamente.")
       }
 
+      toast.success("Conta criada com sucesso! Você será redirecionado para o login.")
+      window.location.href = "/login"
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao criar conta. Tente novamente.")
       console.error("Registration error:", error)
       setSubmitError(error instanceof Error ? error.message : "Erro ao criar conta. Tente novamente.")
     } finally {
       setIsLoading(false)
     }
   }
-
 
   const passwordValidation = validatePassword(formData.password)
 
@@ -260,7 +238,7 @@ export default function PatientRegisterPage() {
       )}
 
       {/* Hero Section */}
-      <section style={heroStyle}>
+      <section style={{ background: "#15803d", color: "white", padding: "4rem 0" }}>
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-4 text-sm font-medium">
             Bem-vindo ao MedAssist
@@ -516,24 +494,65 @@ export default function PatientRegisterPage() {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="neighborhood">Bairro *</Label>
-                        <Input
+                        <select
                           id="neighborhood"
-                          placeholder="Nome do bairro"
                           value={formData.neighborhood}
                           onChange={(e) => handleInputChange("neighborhood", e.target.value)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           required
-                        />
+                        >
+                          <option value="">Selecione</option>
+                          <option value="Centro">Centro</option>
+                          <option value="Vila Prudente">Vila Prudente</option>
+                          <option value="Tatuapé">Tatuapé</option>
+                          <option value="Mooca">Mooca</option>
+                          <option value="Ipiranga">Ipiranga</option>
+                          <option value="Vila Mariana">Vila Mariana</option>
+                          <option value="Pinheiros">Pinheiros</option>
+                          <option value="Jardins">Jardins</option>
+                          <option value="Moema">Moema</option>
+                          <option value="Itaim Bibi">Itaim Bibi</option>
+                          <option value="Brooklin">Brooklin</option>
+                          <option value="Santo Amaro">Santo Amaro</option>
+                          <option value="Butantã">Butantã</option>
+                          <option value="Lapa">Lapa</option>
+                          <option value="Santana">Santana</option>
+                          <option value="Vila Guilherme">Vila Guilherme</option>
+                          <option value="Penha">Penha</option>
+                          <option value="São Miguel">São Miguel</option>
+                          <option value="Outro">Outro</option>
+                        </select>
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="city">Cidade *</Label>
-                        <Input
+                        <select
                           id="city"
-                          placeholder="Nome da cidade"
                           value={formData.city}
                           onChange={(e) => handleInputChange("city", e.target.value)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           required
-                        />
+                        >
+                          <option value="">Selecione</option>
+                          <option value="São Paulo">São Paulo</option>
+                          <option value="Rio de Janeiro">Rio de Janeiro</option>
+                          <option value="Belo Horizonte">Belo Horizonte</option>
+                          <option value="Brasília">Brasília</option>
+                          <option value="Curitiba">Curitiba</option>
+                          <option value="Porto Alegre">Porto Alegre</option>
+                          <option value="Salvador">Salvador</option>
+                          <option value="Fortaleza">Fortaleza</option>
+                          <option value="Recife">Recife</option>
+                          <option value="Manaus">Manaus</option>
+                          <option value="Belém">Belém</option>
+                          <option value="Goiânia">Goiânia</option>
+                          <option value="Campinas">Campinas</option>
+                          <option value="São Bernardo do Campo">São Bernardo do Campo</option>
+                          <option value="Santo André">Santo André</option>
+                          <option value="Guarulhos">Guarulhos</option>
+                          <option value="Osasco">Osasco</option>
+                          <option value="Outra">Outra</option>
+                        </select>
                       </div>
                     </div>
                   </div>
