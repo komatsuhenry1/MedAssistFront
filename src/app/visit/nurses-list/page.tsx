@@ -286,8 +286,7 @@ export default function PatientDashboard() {
               <CardContent style={{ padding: "1.5rem" }}>
                 <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
                   <img
-                    src={nurse.image || "/placeholder.svg?height=80&width=80&query=nurse professional"}
-                    alt={nurse.name}
+                    src={nurse.image ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/file/${nurse.image}` : "/placeholder.svg?height=80&width=80&query=nurse professional"} alt={nurse.name}
                     style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}
                   />
                   <div style={{ flex: 1 }}>
@@ -347,8 +346,8 @@ export default function PatientDashboard() {
                     {nurse.price > 0 && <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>/hora</span>}
                   </div>
 
-                  <Link href={`/patient/nurse/${nurse.id}`}>
-                    <Button
+                  <Link href={`/visit/nurses-list/${nurse.id}`}>
+                  <Button
                       style={{
                         backgroundColor: nurse.available ? "#15803d" : "#6b7280",
                         color: "white",
