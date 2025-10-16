@@ -13,18 +13,6 @@ import { CheckCircle, XCircle, Upload } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 
-const heroStyle = {
-  backgroundImage: `
-    linear-gradient(rgba(21, 128, 61, 0.7), rgba(83, 83, 83, 0.8)),
-    url('/sobre_imagem.png')
-  `,
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  color: "white",
-  padding: "5rem 0",
-}
-
-// Funções de validação e formatação (sem alterações)
 const validateEmail = (email: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
@@ -33,7 +21,9 @@ const validateEmail = (email: string) => {
 const validateCPF = (cpf: string) => {
   const cleanCPF = cpf.replace(/\D/g, "")
   if (cleanCPF.length !== 11) return false
+
   if (/^(\d)\1{10}$/.test(cleanCPF)) return false
+
   let sum = 0
   for (let i = 0; i < 9; i++) {
     sum += Number.parseInt(cleanCPF.charAt(i)) * (10 - i)
@@ -41,6 +31,7 @@ const validateCPF = (cpf: string) => {
   let checkDigit = 11 - (sum % 11)
   if (checkDigit >= 10) checkDigit = 0
   if (checkDigit !== Number.parseInt(cleanCPF.charAt(9))) return false
+
   sum = 0
   for (let i = 0; i < 10; i++) {
     sum += Number.parseInt(cleanCPF.charAt(i)) * (11 - i)
@@ -48,6 +39,7 @@ const validateCPF = (cpf: string) => {
   checkDigit = 11 - (sum % 11)
   if (checkDigit >= 10) checkDigit = 0
   if (checkDigit !== Number.parseInt(cleanCPF.charAt(10))) return false
+
   return true
 }
 
@@ -81,12 +73,23 @@ const formatCPF = (value: string) => {
   return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4")
 }
 
+const formatCEP = (value: string) => {
+  const cleaned = value.replace(/\D/g, "")
+  return cleaned.replace(/(\d{5})(\d{0,3})/, "$1-$2")
+}
+
 export default function PatientRegisterPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
-    address: "",
+    cep: "",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    city: "",
+    uf: "",
     cpf: "",
     password: "",
   })
@@ -96,6 +99,7 @@ export default function PatientRegisterPage() {
     cpf: "",
     password: "",
     phone: "",
+    cep: "",
   })
 
   const [profileImage, setProfileImage] = useState<File | null>(null)
@@ -109,6 +113,8 @@ export default function PatientRegisterPage() {
       formattedValue = formatPhone(value)
     } else if (field === "cpf") {
       formattedValue = formatCPF(value)
+    } else if (field === "cep") {
+      formattedValue = formatCEP(value)
     }
 
     setFormData((prev) => ({ ...prev, [field]: formattedValue }))
@@ -129,6 +135,12 @@ export default function PatientRegisterPage() {
         ...prev,
         phone: cleaned.length >= 10 ? "" : "Telefone incompleto",
       }))
+    } else if (field === "cep" && value) {
+      const cleaned = value.replace(/\D/g, "")
+      setValidationErrors((prev) => ({
+        ...prev,
+        cep: cleaned.length === 8 ? "" : "CEP incompleto",
+      }))
     }
   }
 
@@ -144,20 +156,21 @@ export default function PatientRegisterPage() {
     }
   }
 
-  // 👇 INÍCIO DAS MUDANÇAS AQUI 👇
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const emailValid = validateEmail(formData.email)
     const cpfValid = validateCPF(formData.cpf)
     const passwordValidation = validatePassword(formData.password)
+    const cepValid = formData.cep.replace(/\D/g, "").length === 8
 
-    if (!emailValid || !cpfValid || !passwordValidation.isValid) {
+    if (!emailValid || !cpfValid || !passwordValidation.isValid || !cepValid) {
       setValidationErrors({
         email: emailValid ? "" : "Email inválido",
         cpf: cpfValid ? "" : "CPF inválido",
         password: passwordValidation.isValid ? "" : "Senha não atende aos requisitos",
         phone: formData.phone.replace(/\D/g, "").length >= 10 ? "" : "Telefone incompleto",
+        cep: cepValid ? "" : "CEP incompleto",
       })
       return
     }
@@ -165,19 +178,21 @@ export default function PatientRegisterPage() {
     setIsLoading(true)
     setSubmitError(null)
 
-    // MUDANÇA 1: Usar FormData para enviar arquivos e texto juntos.
     const dataToSend = new FormData()
 
-    // MUDANÇA 2: Adicionar todos os campos de texto ao FormData,
-    // garantindo que os valores "limpos" (sem formatação) sejam enviados.
     dataToSend.append("name", formData.name)
     dataToSend.append("email", formData.email)
     dataToSend.append("phone", formData.phone.replace(/\D/g, ""))
-    dataToSend.append("address", formData.address)
+    dataToSend.append("cep", formData.cep.replace(/\D/g, ""))
+    dataToSend.append("street", formData.street)
+    dataToSend.append("number", formData.number)
+    dataToSend.append("complement", formData.complement)
+    dataToSend.append("neighborhood", formData.neighborhood)
+    dataToSend.append("city", formData.city)
+    dataToSend.append("uf", formData.uf)
     dataToSend.append("cpf", formData.cpf.replace(/\D/g, ""))
     dataToSend.append("password", formData.password)
 
-    // MUDANÇA 3: Adicionar o arquivo de imagem, se existir.
     if (profileImage) {
       dataToSend.append("image_profile", profileImage)
     }
@@ -196,24 +211,26 @@ export default function PatientRegisterPage() {
       })
 
       const data = await response.json()
-      console.log("=======")
-      console.log(data)
-      console.log("=======")
+      if (response.ok) {
+        setTimeout(() => {
+          window.location.href = "/login"
+        }, 1500) // Espera 1.5 segundos antes de redirecionar
+        toast.success("Conta criada com sucesso! Você será redirecionado para o login.")
+    }
 
       if (!response.ok) {
         throw new Error(data.message || "Erro ao criar conta. Tente novamente.")
       }
 
-      toast.success("Conta criada com sucesso! Você será redirecionado para o login.")
-      window.location.href = "/login"
     } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao criar conta. Tente novamente.")
       console.error("Registration error:", error)
       setSubmitError(error instanceof Error ? error.message : "Erro ao criar conta. Tente novamente.")
     } finally {
       setIsLoading(false)
     }
   }
-  // 👆 FIM DAS MUDANÇAS AQUI 👆
+
 
   const passwordValidation = validatePassword(formData.password)
 
@@ -221,7 +238,6 @@ export default function PatientRegisterPage() {
     <>
       <Header />
 
-      {/* O restante do seu componente JSX permanece exatamente o mesmo */}
       {isLoading && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-sm mx-4 text-center">
@@ -233,7 +249,7 @@ export default function PatientRegisterPage() {
       )}
 
       {/* Hero Section */}
-      <section style={heroStyle}>
+      <section style={{ background: "#15803d", color: "white", padding: "4rem 0" }}>
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-4 text-sm font-medium">
             Bem-vindo ao MedAssist
@@ -376,15 +392,139 @@ export default function PatientRegisterPage() {
                     {validationErrors.phone && <p className="text-xs text-red-500">{validationErrors.phone}</p>}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Endereço Completo *</Label>
-                    <Input
-                      id="address"
-                      placeholder="Rua, número, bairro, cidade - UF"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
-                      required
-                    />
+                  <div className="space-y-4 border-t pt-4">
+                    <h4 className="text-sm font-semibold text-gray-700">Endereço</h4>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="cep">CEP *</Label>
+                        <div className="relative">
+                          <Input
+                            id="cep"
+                            placeholder="00000-000"
+                            value={formData.cep}
+                            onChange={(e) => handleInputChange("cep", e.target.value)}
+                            className={
+                              validationErrors.cep
+                                ? "border-red-500"
+                                : formData.cep.replace(/\D/g, "").length === 8
+                                  ? "border-green-500"
+                                  : ""
+                            }
+                            maxLength={9}
+                            required
+                          />
+                          {formData.cep && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              {validationErrors.cep ? (
+                                <XCircle className="h-5 w-5 text-red-500" />
+                              ) : formData.cep.replace(/\D/g, "").length === 8 ? (
+                                <CheckCircle className="h-5 w-5 text-green-500" />
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                        {validationErrors.cep && <p className="text-xs text-red-500">{validationErrors.cep}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="uf">Estado (UF) *</Label>
+                        <select
+                          id="uf"
+                          value={formData.uf}
+                          onChange={(e) => handleInputChange("uf", e.target.value)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          <option value="AC">Acre</option>
+                          <option value="AL">Alagoas</option>
+                          <option value="AP">Amapá</option>
+                          <option value="AM">Amazonas</option>
+                          <option value="BA">Bahia</option>
+                          <option value="CE">Ceará</option>
+                          <option value="DF">Distrito Federal</option>
+                          <option value="ES">Espírito Santo</option>
+                          <option value="GO">Goiás</option>
+                          <option value="MA">Maranhão</option>
+                          <option value="MT">Mato Grosso</option>
+                          <option value="MS">Mato Grosso do Sul</option>
+                          <option value="MG">Minas Gerais</option>
+                          <option value="PA">Pará</option>
+                          <option value="PB">Paraíba</option>
+                          <option value="PR">Paraná</option>
+                          <option value="PE">Pernambuco</option>
+                          <option value="PI">Piauí</option>
+                          <option value="RJ">Rio de Janeiro</option>
+                          <option value="RN">Rio Grande do Norte</option>
+                          <option value="RS">Rio Grande do Sul</option>
+                          <option value="RO">Rondônia</option>
+                          <option value="RR">Roraima</option>
+                          <option value="SC">Santa Catarina</option>
+                          <option value="SP">São Paulo</option>
+                          <option value="SE">Sergipe</option>
+                          <option value="TO">Tocantins</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="street">Rua *</Label>
+                      <Input
+                        id="street"
+                        placeholder="Nome da rua"
+                        value={formData.street}
+                        onChange={(e) => handleInputChange("street", e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="number">Número *</Label>
+                        <Input
+                          id="number"
+                          placeholder="123"
+                          value={formData.number}
+                          onChange={(e) => handleInputChange("number", e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="complement">Complemento</Label>
+                        <Input
+                          id="complement"
+                          placeholder="Apto, bloco, etc."
+                          value={formData.complement}
+                          onChange={(e) => handleInputChange("complement", e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="neighborhood">Bairro *</Label>
+                        <Input
+                          id="neighborhood"
+                          placeholder="Nome do bairro"
+                          value={formData.neighborhood}
+                          onChange={(e) => handleInputChange("neighborhood", e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="city">Cidade *</Label>
+                        <Input
+                          id="city"
+                          placeholder="Nome da cidade"
+                          value={formData.city}
+                          onChange={(e) => handleInputChange("city", e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">

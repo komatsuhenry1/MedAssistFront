@@ -71,6 +71,11 @@ const formatCPF = (value: string) => {
   return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4")
 }
 
+const formatCEP = (value: string) => {
+  const cleaned = value.replace(/\D/g, "")
+  return cleaned.replace(/(\d{5})(\d{0,3})/, "$1-$2")
+}
+
 const DocumentInput = ({
   field,
   label,
@@ -167,10 +172,16 @@ export default function RegisterPage() {
     name: "",
     email: "",
     phone: "",
-    address: "",
+    cep: "",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    city: "",
+    uf: "",
     cpf: "",
     password: "",
-    coren: "",
+    license_number: "",
     specialization: "",
     department: "",
     years_experience: "",
@@ -186,7 +197,8 @@ export default function RegisterPage() {
     cpf: "",
     password: "",
     phone: "",
-    coren: "",
+    license_number: "",
+    cep: "",
   })
 
   const [previews, setPreviews] = useState({
@@ -199,14 +211,12 @@ export default function RegisterPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // MUDANÇA: Estados e Refs para controlar a câmera
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [capturingField, setCapturingField] = useState<string | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // MUDANÇA: Função para iniciar a câmera do dispositivo
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true })
@@ -223,7 +233,6 @@ export default function RegisterPage() {
     }
   }
 
-  // MUDANÇA: Função para parar a câmera e liberar o recurso
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop())
@@ -231,7 +240,6 @@ export default function RegisterPage() {
     }
   }
 
-  // MUDANÇA: Hook para gerenciar o ciclo de vida da câmera (liga/desliga com o modal)
   useEffect(() => {
     if (isCameraOpen) {
       startCamera()
@@ -239,19 +247,16 @@ export default function RegisterPage() {
       stopCamera()
     }
 
-    // Função de limpeza para garantir que a câmera pare se o componente for desmontado
     return () => {
       stopCamera()
     }
   }, [isCameraOpen])
 
-  // MUDANÇA: Função para abrir o modal da câmera e definir qual campo está sendo preenchido
   const handleOpenCamera = (field: string) => {
     setCapturingField(field)
     setIsCameraOpen(true)
   }
 
-  // MUDANÇA: Função para capturar a imagem do vídeo, converter para File e salvar no estado
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current && capturingField) {
       const video = videoRef.current
@@ -260,7 +265,6 @@ export default function RegisterPage() {
       canvas.height = video.videoHeight
       const context = canvas.getContext("2d")
       if (context) {
-        // Espelha a imagem horizontalmente no canvas para corresponder à visualização do vídeo
         context.translate(canvas.width, 0)
         context.scale(-1, 1)
         context.drawImage(video, 0, 0, canvas.width, canvas.height)
@@ -284,11 +288,12 @@ export default function RegisterPage() {
       formattedValue = formatPhone(value)
     } else if (field === "cpf") {
       formattedValue = formatCPF(value)
+    } else if (field === "cep") {
+      formattedValue = formatCEP(value)
     }
 
     setFormData((prev) => ({ ...prev, [field]: formattedValue }))
 
-    // Real-time validation
     if (field === "email" && value) {
       setValidationErrors((prev) => ({
         ...prev,
@@ -305,11 +310,17 @@ export default function RegisterPage() {
         ...prev,
         phone: cleaned.length >= 10 ? "" : "Telefone incompleto",
       }))
-    } else if (field === "coren" && value) {
+    } else if (field === "license_number" && value) {
       const corenRegex = /^COREN-[A-Z]{2}\s?\d{4,6}$/i
       setValidationErrors((prev) => ({
         ...prev,
-        coren: corenRegex.test(value) ? "" : "Formato: COREN-UF 123456",
+        license_number: corenRegex.test(value) ? "" : "Formato: COREN-UF 123456",
+      }))
+    } else if (field === "cep" && value) {
+      const cleaned = value.replace(/\D/g, "")
+      setValidationErrors((prev) => ({
+        ...prev,
+        cep: cleaned.length === 8 ? "" : "CEP incompleto",
       }))
     }
   }
@@ -331,21 +342,22 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate all fields before submission
     const emailValid = validateEmail(formData.email)
     const cpfValid = validateCPF(formData.cpf)
     const passwordValidation = validatePassword(formData.password)
     const phoneValid = formData.phone.replace(/\D/g, "").length >= 10
     const corenRegex = /^COREN-[A-Z]{2}\s?\d{4,6}$/i
-    const corenValid = corenRegex.test(formData.coren)
+    const corenValid = corenRegex.test(formData.license_number)
+    const cepValid = formData.cep.replace(/\D/g, "").length === 8
 
-    if (!emailValid || !cpfValid || !passwordValidation.isValid || !phoneValid || !corenValid) {
+    if (!emailValid || !cpfValid || !passwordValidation.isValid || !phoneValid || !corenValid || !cepValid) {
       setValidationErrors({
         email: emailValid ? "" : "Email inválido",
         cpf: cpfValid ? "" : "CPF inválido",
         password: passwordValidation.isValid ? "" : "Senha não atende aos requisitos",
         phone: phoneValid ? "" : "Telefone incompleto",
-        coren: corenValid ? "" : "Formato: COREN-UF 123456",
+        license_number: corenValid ? "" : "Formato: COREN-UF 123456",
+        cep: cepValid ? "" : "CEP incompleto",
       })
       toast.error("Por favor, corrija os erros no formulário")
       return
@@ -355,19 +367,24 @@ export default function RegisterPage() {
 
     const formDataToSend = new FormData()
 
-    // Add text fields with cleaned values
     formDataToSend.append("name", formData.name)
     formDataToSend.append("email", formData.email)
     formDataToSend.append("phone", formData.phone.replace(/\D/g, ""))
-    formDataToSend.append("address", formData.address)
+    formDataToSend.append("cep", formData.cep.replace(/\D/g, ""))
+    formDataToSend.append("street", formData.street)
+    formDataToSend.append("number", formData.number)
+    formDataToSend.append("complement", formData.complement)
+    formDataToSend.append("neighborhood", formData.neighborhood)
+    formDataToSend.append("city", formData.city)
+    formDataToSend.append("uf", formData.uf)
     formDataToSend.append("cpf", formData.cpf.replace(/\D/g, ""))
     formDataToSend.append("password", formData.password)
-    formDataToSend.append("coren", formData.coren)
+    // MUDANÇA: O nome do campo foi alterado para "coren"
+    formDataToSend.append("coren", formData.license_number)
     formDataToSend.append("specialization", formData.specialization)
     formDataToSend.append("department", formData.department)
     formDataToSend.append("years_experience", formData.years_experience)
 
-    // Add file fields
     if (formData.qualifications) formDataToSend.append("qualifications", formData.qualifications)
     if (formData.general_register) formDataToSend.append("general_register", formData.general_register)
     if (formData.residence_comprovant) formDataToSend.append("residence_comprovant", formData.residence_comprovant)
@@ -381,7 +398,6 @@ export default function RegisterPage() {
         method: "POST",
         body: formDataToSend,
       })
-      console.log("Response:", response)
 
       if (response.ok) {
         toast.success("Cadastro solicitado com sucesso!", {
@@ -472,7 +488,7 @@ export default function RegisterPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Informações Pessoais (Sem alterações) */}
+                  {/* Informações Pessoais */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold border-b pb-2">Informações Pessoais</h3>
 
@@ -584,123 +600,243 @@ export default function RegisterPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Endereço Completo *</Label>
-                      <Input
-                        id="address"
-                        placeholder="Rua, número, bairro, cidade - UF"
-                        value={formData.address}
-                        onChange={(e) => handleInputChange("address", e.target.value)}
-                        required
-                      />
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-semibold text-gray-700">Endereço</h4>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="cep">CEP *</Label>
+                          <div className="relative">
+                            <Input
+                              id="cep"
+                              placeholder="00000-000"
+                              value={formData.cep}
+                              onChange={(e) => handleInputChange("cep", e.target.value)}
+                              className={
+                                validationErrors.cep
+                                  ? "border-red-500"
+                                  : formData.cep.replace(/\D/g, "").length === 8
+                                    ? "border-green-500"
+                                    : ""
+                              }
+                              maxLength={9}
+                              required
+                            />
+                            {formData.cep && (
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                {validationErrors.cep ? (
+                                  <XCircle className="h-5 w-5 text-red-500" />
+                                ) : formData.cep.replace(/\D/g, "").length === 8 ? (
+                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
+                          {validationErrors.cep && <p className="text-xs text-red-500">{validationErrors.cep}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="uf">Estado (UF) *</Label>
+                          <Select onValueChange={(value) => handleInputChange("uf", value)} required>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o estado" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="AC">Acre</SelectItem>
+                              <SelectItem value="AL">Alagoas</SelectItem>
+                              <SelectItem value="AP">Amapá</SelectItem>
+                              <SelectItem value="AM">Amazonas</SelectItem>
+                              <SelectItem value="BA">Bahia</SelectItem>
+                              <SelectItem value="CE">Ceará</SelectItem>
+                              <SelectItem value="DF">Distrito Federal</SelectItem>
+                              <SelectItem value="ES">Espírito Santo</SelectItem>
+                              <SelectItem value="GO">Goiás</SelectItem>
+                              <SelectItem value="MA">Maranhão</SelectItem>
+                              <SelectItem value="MT">Mato Grosso</SelectItem>
+                              <SelectItem value="MS">Mato Grosso do Sul</SelectItem>
+                              <SelectItem value="MG">Minas Gerais</SelectItem>
+                              <SelectItem value="PA">Pará</SelectItem>
+                              <SelectItem value="PB">Paraíba</SelectItem>
+                              <SelectItem value="PR">Paraná</SelectItem>
+                              <SelectItem value="PE">Pernambuco</SelectItem>
+                              <SelectItem value="PI">Piauí</SelectItem>
+                              <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                              <SelectItem value="RN">Rio Grande do Norte</SelectItem>
+                              <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+                              <SelectItem value="RO">Rondônia</SelectItem>
+                              <SelectItem value="RR">Roraima</SelectItem>
+                              <SelectItem value="SC">Santa Catarina</SelectItem>
+                              <SelectItem value="SP">São Paulo</SelectItem>
+                              <SelectItem value="SE">Sergipe</SelectItem>
+                              <SelectItem value="TO">Tocantins</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="street">Rua *</Label>
+                        <Input
+                          id="street"
+                          placeholder="Nome da rua"
+                          value={formData.street}
+                          onChange={(e) => handleInputChange("street", e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="number">Número *</Label>
+                          <Input
+                            id="number"
+                            placeholder="123"
+                            value={formData.number}
+                            onChange={(e) => handleInputChange("number", e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="complement">Complemento</Label>
+                          <Input
+                            id="complement"
+                            placeholder="Apto, bloco, etc."
+                            value={formData.complement}
+                            onChange={(e) => handleInputChange("complement", e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="neighborhood">Bairro *</Label>
+                          <Input
+                            id="neighborhood"
+                            placeholder="Nome do bairro"
+                            value={formData.neighborhood}
+                            onChange={(e) => handleInputChange("neighborhood", e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="city">Cidade *</Label>
+                          <Input
+                            id="city"
+                            placeholder="Nome da cidade"
+                            value={formData.city}
+                            onChange={(e) => handleInputChange("city", e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Senha *</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Senha *</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Mínimo 8 caracteres"
+                        value={formData.password}
+                        onChange={(e) => handleInputChange("password", e.target.value)}
+                        className={
+                          formData.password && !passwordValidation.isValid
+                            ? "border-red-500"
+                            : formData.password && passwordValidation.isValid
+                              ? "border-green-500"
+                              : ""
+                        }
+                        required
+                        minLength={8}
+                      />
+                      {formData.password && (
+                        <div className="text-xs space-y-1 mt-2">
+                          <div
+                            className={`flex items-center gap-2 ${passwordValidation.hasMinLength ? "text-green-600" : "text-gray-500"}`}
+                          >
+                            {passwordValidation.hasMinLength ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            Mínimo 8 caracteres
+                          </div>
+                          <div
+                            className={`flex items-center gap-2 ${passwordValidation.hasUpperCase ? "text-green-600" : "text-gray-500"}`}
+                          >
+                            {passwordValidation.hasUpperCase ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            Uma letra maiúscula
+                          </div>
+                          <div
+                            className={`flex items-center gap-2 ${passwordValidation.hasLowerCase ? "text-green-600" : "text-gray-500"}`}
+                          >
+                            {passwordValidation.hasLowerCase ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            Uma letra minúscula
+                          </div>
+                          <div
+                            className={`flex items-center gap-2 ${passwordValidation.hasNumber ? "text-green-600" : "text-gray-500"}`}
+                          >
+                            {passwordValidation.hasNumber ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            Um número
+                          </div>
+                          <div
+                            className={`flex items-center gap-2 ${passwordValidation.hasSpecialChar ? "text-green-600" : "text-gray-500"}`}
+                          >
+                            {passwordValidation.hasSpecialChar ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            Um caractere especial
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="license_number">Número COREN *</Label>
+                      <div className="relative">
                         <Input
-                          id="password"
-                          type="password"
-                          placeholder="Mínimo 8 caracteres"
-                          value={formData.password}
-                          onChange={(e) => handleInputChange("password", e.target.value)}
+                          id="license_number"
+                          placeholder="Ex: COREN-SP 123456"
+                          value={formData.license_number}
+                          onChange={(e) => handleInputChange("license_number", e.target.value)}
                           className={
-                            formData.password && !passwordValidation.isValid
+                            validationErrors.license_number
                               ? "border-red-500"
-                              : formData.password && passwordValidation.isValid
+                              : formData.license_number && !validationErrors.license_number
                                 ? "border-green-500"
                                 : ""
                           }
                           required
-                          minLength={8}
                         />
-                        {formData.password && (
-                          <div className="text-xs space-y-1 mt-2">
-                            <div
-                              className={`flex items-center gap-2 ${passwordValidation.hasMinLength ? "text-green-600" : "text-gray-500"}`}
-                            >
-                              {passwordValidation.hasMinLength ? (
-                                <CheckCircle className="h-3 w-3" />
-                              ) : (
-                                <XCircle className="h-3 w-3" />
-                              )}
-                              Mínimo 8 caracteres
-                            </div>
-                            <div
-                              className={`flex items-center gap-2 ${passwordValidation.hasUpperCase ? "text-green-600" : "text-gray-500"}`}
-                            >
-                              {passwordValidation.hasUpperCase ? (
-                                <CheckCircle className="h-3 w-3" />
-                              ) : (
-                                <XCircle className="h-3 w-3" />
-                              )}
-                              Uma letra maiúscula
-                            </div>
-                            <div
-                              className={`flex items-center gap-2 ${passwordValidation.hasLowerCase ? "text-green-600" : "text-gray-500"}`}
-                            >
-                              {passwordValidation.hasLowerCase ? (
-                                <CheckCircle className="h-3 w-3" />
-                              ) : (
-                                <XCircle className="h-3 w-3" />
-                              )}
-                              Uma letra minúscula
-                            </div>
-                            <div
-                              className={`flex items-center gap-2 ${passwordValidation.hasNumber ? "text-green-600" : "text-gray-500"}`}
-                            >
-                              {passwordValidation.hasNumber ? (
-                                <CheckCircle className="h-3 w-3" />
-                              ) : (
-                                <XCircle className="h-3 w-3" />
-                              )}
-                              Um número
-                            </div>
-                            <div
-                              className={`flex items-center gap-2 ${passwordValidation.hasSpecialChar ? "text-green-600" : "text-gray-500"}`}
-                            >
-                              {passwordValidation.hasSpecialChar ? (
-                                <CheckCircle className="h-3 w-3" />
-                              ) : (
-                                <XCircle className="h-3 w-3" />
-                              )}
-                              Um caractere especial
-                            </div>
+                        {formData.license_number && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            {validationErrors.license_number ? (
+                              <XCircle className="h-5 w-5 text-red-500" />
+                            ) : (
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                            )}
                           </div>
                         )}
                       </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="coren">Número COREN *</Label>
-                        <div className="relative">
-                          <Input
-                            id="coren"
-                            placeholder="Ex: COREN-SP 123456"
-                            value={formData.coren}
-                            onChange={(e) => handleInputChange("coren", e.target.value)}
-                            className={
-                              validationErrors.coren
-                                ? "border-red-500"
-                                : formData.coren && !validationErrors.coren
-                                  ? "border-green-500"
-                                  : ""
-                            }
-                            required
-                          />
-                          {formData.coren && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              {validationErrors.coren ? (
-                                <XCircle className="h-5 w-5 text-red-500" />
-                              ) : (
-                                <CheckCircle className="h-5 w-5 text-green-500" />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        {validationErrors.coren && (
-                          <p className="text-xs text-red-500">{validationErrors.coren}</p>
-                        )}
-                      </div>
+                      {validationErrors.license_number && (
+                        <p className="text-xs text-red-500">{validationErrors.license_number}</p>
+                      )}
                     </div>
                   </div>
 
@@ -832,7 +968,6 @@ export default function RegisterPage() {
         </div>
       </section>
 
-      {/* Seção Próximos Passos (Sem alterações) */}
       <section className="py-16 bg-secondary/30">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
@@ -868,7 +1003,6 @@ export default function RegisterPage() {
         </div>
       </section>
 
-      {/* MUDANÇA: Modal da Câmera */}
       <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
