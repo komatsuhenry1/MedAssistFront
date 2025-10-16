@@ -8,8 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
-import Image from "next/image"
 
+const heroStyle = {
+  backgroundImage: `
+    linear-gradient(rgba(21, 128, 61, 0.7), rgba(83, 83, 83, 0.8)),
+    url('/equipe_enfermeiros.png')
+  `,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  color: "white",
+  padding: "5rem 0",
+}
 interface Nurse {
   id: string
   name: string
@@ -21,23 +30,13 @@ interface Nurse {
   image: string
   available: boolean
   location: string
+  neighborhood: string
 }
 
 interface ApiResponse {
-  data: Nurse[] | null
+  data: Nurse[] | null // API pode retornar null
   message: string
   success: boolean
-}
-
-const heroStyle = {
-  backgroundImage: `
-    linear-gradient(rgba(21, 128, 61, 0.7), rgba(83, 83, 83, 0.8)),
-    url('/equipe_enfermeiros.png')
-  `,
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  color: "white",
-  padding: "5rem 0",
 }
 
 export default function PatientDashboard() {
@@ -50,32 +49,29 @@ export default function PatientDashboard() {
   const [shiftFilter, setShiftFilter] = useState("")
   const [availabilityFilter, setAvailabilityFilter] = useState("")
   const [priceRange, setPriceRange] = useState("")
+  const [neighborhoodFilter, setNeighborhoodFilter] = useState("")
 
   useEffect(() => {
     const fetchNurses = async () => {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-      console.log("URL da API:", API_BASE_URL)
-
       try {
         setLoading(true)
-        const allNursesUrl = `${API_BASE_URL}/user/all_nurses`
-        const token = localStorage.getItem("token")
-
-        const res = await fetch(allNursesUrl, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/all_nurses`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         })
 
-        if (!res.ok) {
+        if (!response.ok) {
           throw new Error("Falha ao carregar enfermeiros")
         }
 
-        const data: ApiResponse = await res.json()
+        const data: ApiResponse = await response.json()
 
         if (data.success) {
+          // ✨ CORREÇÃO APLICADA AQUI ✨
+          // Garante que nurses sempre será um array, mesmo que data.data seja null
           setNurses(data.data || [])
         } else {
           throw new Error(data.message || "Erro ao carregar dados")
@@ -95,36 +91,27 @@ export default function PatientDashboard() {
     const matchesSearch =
       nurse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       nurse.specialization.toLowerCase().includes(searchTerm.toLowerCase())
-
     const matchesSpecialization =
       !specializationFilter || nurse.specialization.toLowerCase() === specializationFilter.toLowerCase()
-
-    // MUDANÇA 1: Lógica de filtro de turno atualizada
-    // Agora ela verifica se o filtro é o nosso valor especial "unspecified-shift"
-    // e, nesse caso, procura por enfermeiros com `nurse.shift === ""`.
-    const matchesShift =
-      !shiftFilter ||
-      (shiftFilter === "unspecified-shift" && nurse.shift === "") ||
-      nurse.shift.toLowerCase() === shiftFilter.toLowerCase()
-
+    const matchesShift = !shiftFilter || nurse.shift.toLowerCase() === shiftFilter.toLowerCase()
     const matchesAvailability =
       !availabilityFilter ||
       (availabilityFilter === "available" && nurse.available) ||
       (availabilityFilter === "unavailable" && !nurse.available)
-      
     const matchesPrice =
       !priceRange ||
       (priceRange === "low" && nurse.price <= 80) ||
       (priceRange === "medium" && nurse.price > 80 && nurse.price <= 100) ||
       (priceRange === "high" && nurse.price > 100)
+    const matchesNeighborhood =
+      !neighborhoodFilter || nurse.neighborhood.toLowerCase() === neighborhoodFilter.toLowerCase()
 
-    return matchesSearch && matchesSpecialization && matchesShift && matchesAvailability && matchesPrice
+    return matchesSearch && matchesSpecialization && matchesShift && matchesAvailability && matchesPrice && matchesNeighborhood
   })
 
-  // MUDANÇA 2: Apenas as especializações são filtradas para não ter valores vazios.
-  // Mantemos o turno vazio ("") na lista `uniqueShifts`.
   const uniqueSpecializations = Array.from(new Set(nurses.map((nurse) => nurse.specialization))).filter(Boolean)
-  const uniqueShifts = Array.from(new Set(nurses.map((nurse) => nurse.shift)))
+  const uniqueShifts = Array.from(new Set(nurses.map((nurse) => nurse.shift))).filter(Boolean)
+  const uniqueNeighborhoods = Array.from(new Set(nurses.map((nurse) => nurse.neighborhood))).filter(Boolean)
 
   const clearFilters = () => {
     setSearchTerm("")
@@ -132,9 +119,8 @@ export default function PatientDashboard() {
     setShiftFilter("")
     setAvailabilityFilter("")
     setPriceRange("")
+    setNeighborhoodFilter("")
   }
-
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
   if (loading) {
     return (
@@ -181,7 +167,10 @@ export default function PatientDashboard() {
     <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
       <Header />
 
-      <section style={heroStyle} >
+      {/* Hero Section */}
+      <section
+        style={heroStyle}
+      >
         <div style={{ maxWidth: "1200px", margin: "0 auto", textAlign: "center" }}>
           <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Encontre o Enfermeiro Ideal</h1>
           <p style={{ fontSize: "1.25rem", opacity: 0.9, maxWidth: "600px", margin: "0 auto" }}>
@@ -191,6 +180,7 @@ export default function PatientDashboard() {
       </section>
 
       <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem 1rem" }}>
+        {/* Filters Section */}
         <Card style={{ marginBottom: "2rem" }}>
           <CardHeader>
             <CardTitle style={{ color: "#15803d" }}>Filtros de Busca</CardTitle>
@@ -228,24 +218,24 @@ export default function PatientDashboard() {
                   <SelectValue placeholder="Turno" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* MUDANÇA 3: Renderização condicional para o Select de Turno */}
-                  {uniqueShifts.map((shift) => {
-                    // Se o turno for uma string vazia...
-                    if (shift === "") {
-                      return (
-                        // ...renderizamos um item com valor especial e texto descritivo.
-                        <SelectItem key="unspecified" value="unspecified-shift">
-                          Não Especificado
-                        </SelectItem>
-                      )
-                    }
-                    // Caso contrário, renderizamos normalmente.
-                    return (
-                      <SelectItem key={shift} value={shift}>
-                        {shift.charAt(0).toUpperCase() + shift.slice(1)}
-                      </SelectItem>
-                    )
-                  })}
+                  {uniqueShifts.map((shift) => (
+                    <SelectItem key={shift} value={shift}>
+                      {shift.charAt(0).toUpperCase() + shift.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Bairro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueNeighborhoods.map((neighborhood) => (
+                    <SelectItem key={neighborhood} value={neighborhood}>
+                      {neighborhood}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -277,119 +267,101 @@ export default function PatientDashboard() {
           </CardContent>
         </Card>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "1.5rem" }}>
-          {filteredNurses.map((nurse) => {
-            const imageUrl = nurse.image ? `${API_BASE_URL}/user/file/${nurse.image}` : "/placeholder-avatar.png"
-            // MUDANÇA 4: Lógica para exibir o texto do turno
-            const shiftDisplay =
-              nurse.shift && nurse.shift.length > 0
-                ? nurse.shift.charAt(0).toUpperCase() + nurse.shift.slice(1)
-                : "Não Especificado"
+        {/* Results Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+          <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
+            {filteredNurses.length} Enfermeiros Encontrados
+          </h2>
+        </div>
 
-            return (
-              <Card
-                key={nurse.id}
-                style={{ transition: "transform 0.2s", cursor: "pointer" }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-              >
-                <CardContent
+        {/* Nurses Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "1.5rem" }}>
+          {filteredNurses.map((nurse) => (
+            <Card
+              key={nurse.id}
+              style={{ transition: "transform 0.2s", cursor: "pointer" }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+            >
+              <CardContent style={{ padding: "1.5rem" }}>
+                <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+                  <img
+                    src={nurse.image || "/placeholder.svg?height=80&width=80&query=nurse professional"}
+                    alt={nurse.name}
+                    style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "start",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      <h3 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#1f2937" }}>{nurse.name}</h3>
+                      <Badge
+                        variant={nurse.available ? "default" : "secondary"}
+                        style={{ backgroundColor: nurse.available ? "#15803d" : "#6b7280" }}
+                      >
+                        {nurse.available ? "Disponível" : "Indisponível"}
+                      </Badge>
+                    </div>
+                    <p style={{ color: "#15803d", fontWeight: "600", marginBottom: "0.25rem" }}>
+                      {nurse.specialization.charAt(0).toUpperCase() + nurse.specialization.slice(1)}
+                    </p>
+                    <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>{nurse.department}</p>
+                  </div>
+                </div>
+
+                <div
                   style={{
-                    padding: "1.5rem",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    height: "100%",
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "0.5rem",
+                    marginBottom: "1rem",
+                    fontSize: "0.875rem",
                   }}
                 >
                   <div>
-                    <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-                      <div
-                        style={{
-                          position: "relative",
-                          width: "80px",
-                          height: "80px",
-                          borderRadius: "50%",
-                          overflow: "hidden",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Image src={imageUrl} alt={nurse.name} fill style={{ objectFit: "cover" }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "start",
-                            marginBottom: "0.5rem",
-                          }}
-                        >
-                          <h3 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#1f2937" }}>{nurse.name}</h3>
-                          <Badge
-                            variant={nurse.available ? "default" : "secondary"}
-                            style={{ backgroundColor: nurse.available ? "#15803d" : "#6b7280" }}
-                          >
-                            {nurse.available ? "Disponível" : "Indisponível"}
-                          </Badge>
-                        </div>
-                        <p style={{ color: "#15803d", fontWeight: "600", marginBottom: "0.25rem" }}>
-                          {nurse.specialization.charAt(0).toUpperCase() + nurse.specialization.slice(1)}
-                        </p>
-                        <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>{nurse.department}</p>
-                      </div>
-                    </div>
+                    <span style={{ color: "#6b7280" }}>Experiência:</span>
+                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.years_experience} anos</span>
+                  </div>
+                  <div>
+                    <span style={{ color: "#6b7280" }}>Turno:</span>
+                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>
+                      {nurse.shift.charAt(0).toUpperCase() + nurse.shift.slice(1)}
+                    </span>
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <span style={{ color: "#6b7280" }}>Localização:</span>
+                    <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.location}</span>
+                  </div>
+                </div>
 
-                    <div
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <span style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
+                      {nurse.price > 0 ? `R$ ${nurse.price}` : "A combinar"}
+                    </span>
+                    {nurse.price > 0 && <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>/hora</span>}
+                  </div>
+
+                  <Link href={`/patient/nurse/${nurse.id}`}>
+                    <Button
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "0.5rem",
-                        marginBottom: "1rem",
-                        fontSize: "0.875rem",
+                        backgroundColor: nurse.available ? "#15803d" : "#6b7280",
+                        color: "white",
                       }}
+                      disabled={!nurse.available}
                     >
-                      <div>
-                        <span style={{ color: "#6b7280" }}>Experiência:</span>
-                        <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>
-                          {nurse.years_experience} anos
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ color: "#6b7280" }}>Turno:</span>
-                        <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{shiftDisplay}</span>
-                      </div>
-                      <div style={{ gridColumn: "1 / -1" }}>
-                        <span style={{ color: "#6b7280" }}>Localização:</span>
-                        <span style={{ marginLeft: "0.25rem", fontWeight: "600" }}>{nurse.location}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 'auto' }}>
-                    <div>
-                      <span style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#15803d" }}>
-                        {nurse.price > 0 ? `R$ ${nurse.price}` : "A combinar"}
-                      </span>
-                      {nurse.price > 0 && <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>/hora</span>}
-                    </div>
-
-                    <Link href={`/visit/nurses-list/${nurse.id}`}>
-                      <Button
-                        style={{
-                          backgroundColor: nurse.available ? "#15803d" : "#6b7280",
-                          color: "white",
-                        }}
-                        disabled={!nurse.available}
-                      >
-                        {nurse.available ? "Ver Perfil" : "Indisponível"}
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+                      {nurse.available ? "Ver Perfil" : "Indisponível"}
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {filteredNurses.length === 0 && !loading && (
