@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { Loader2, User, Mail, Phone, MapPin, Calendar, Shield, CreditCard, Clock } from "lucide-react"
+import dynamic from 'next/dynamic'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
@@ -33,7 +34,7 @@ interface ApiResponse {
     success: boolean
 }
 
-// [MUDANÇA] Componente reutilizável para itens de informação, inspirado no seu exemplo.
+// Componente reutilizável para itens de informação
 const InfoItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
     <li style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
         <div style={{ color: "#15803d" }}>{icon}</div>
@@ -52,6 +53,19 @@ export default function PatientProfile() {
     const [patient, setPatient] = useState<PatientData | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+
+    const AddressMapWithNoSSR = useMemo(() => dynamic(
+        () => import('@/components/AddressMap'), 
+        { 
+            loading: () => (
+                <div className="flex items-center justify-center h-[250px] bg-gray-100 rounded-lg">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+                    <p className="ml-2 text-gray-600">Carregando mapa...</p>
+                </div>
+            ),
+            ssr: false
+        }
+    ), [])
 
     useEffect(() => {
         const fetchPatientData = async () => {
@@ -78,8 +92,9 @@ export default function PatientProfile() {
                     throw new Error(result.message || "Erro ao carregar dados do paciente")
                 }
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Erro desconhecido")
-                toast.error(err instanceof Error ? err.message : "Erro ao carregar perfil")
+                const errorMessage = err instanceof Error ? err.message : "Erro desconhecido"
+                setError(errorMessage)
+                toast.error(errorMessage)
             } finally {
                 setLoading(false)
             }
@@ -150,7 +165,7 @@ export default function PatientProfile() {
                 </Button>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {/* Left Column - Patient Info Card */}
+                    {/* Coluna da Esquerda - Informações do Paciente */}
                     <aside className="md:col-span-1 space-y-6">
                         <Card className="text-center">
                             <CardContent className="p-6">
@@ -190,7 +205,7 @@ export default function PatientProfile() {
                         </Card>
                     </aside>
 
-                    {/* Right Column - Details */}
+                    {/* Coluna da Direita - Detalhes */}
                     <section className="md:col-span-2 space-y-6">
                         <Card>
                             <CardHeader>
@@ -199,12 +214,16 @@ export default function PatientProfile() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {/* [MUDANÇA] Layout simplificado para uma lista mais limpa */}
                                 <ul className="space-y-4">
                                     <InfoItem icon={<Mail size={20} />} label="Email" value={patient.email} />
                                     <InfoItem icon={<Phone size={20} />} label="Telefone" value={formatPhone(patient.phone)} />
                                     <InfoItem icon={<MapPin size={20} />} label="Endereço" value={patient.address} />
                                 </ul>
+
+                                {/* [MUDANÇA] O mapa é renderizado aqui, somente se houver um endereço */}
+                                <div className="mt-6">
+                                    {patient.address && <AddressMapWithNoSSR address={patient.address} />}
+                                </div>
                             </CardContent>
                         </Card>
 
