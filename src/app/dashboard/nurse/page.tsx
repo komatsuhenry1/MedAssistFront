@@ -473,7 +473,6 @@ export default function NurseDashboard() {
                   </div>
                 </div>
 
-                {/* Specialization */}
                 <div>
                   <Label htmlFor="specialization">Especialização</Label>
                   <Select
@@ -552,7 +551,6 @@ export default function NurseDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-          {/* </CHANGE> */}
         </Tabs>
       </section>
     </div>

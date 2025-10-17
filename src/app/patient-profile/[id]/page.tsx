@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { User, Mail, Phone, MapPin, Calendar, Shield, CreditCard, Clock } from "lucide-react"
+import { Loader2, User, Mail, Phone, MapPin, Calendar, Shield, CreditCard, Clock } from "lucide-react"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
@@ -33,6 +33,17 @@ interface ApiResponse {
     success: boolean
 }
 
+// [MUDANÇA] Componente reutilizável para itens de informação, inspirado no seu exemplo.
+const InfoItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
+    <li style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div style={{ color: "#15803d" }}>{icon}</div>
+        <div>
+            <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>{label}</p>
+            <p style={{ fontWeight: "600", color: "#1f2937" }}>{value}</p>
+        </div>
+    </li>
+)
+
 export default function PatientProfile() {
     const params = useParams()
     const router = useRouter()
@@ -44,8 +55,8 @@ export default function PatientProfile() {
 
     useEffect(() => {
         const fetchPatientData = async () => {
+            if (!patientId) return
             try {
-                console.log("Fetching patient data...")
                 setLoading(true)
                 const response = await fetch(`${API_BASE_URL}/nurse/patient/${patientId}`, {
                     method: "GET",
@@ -55,31 +66,26 @@ export default function PatientProfile() {
                     },
                 })
 
-                console.log("response: ", response)
-
                 if (!response.ok) {
-                    throw new Error("Paciente não encontrado")
+                    throw new Error("Paciente não encontrado ou acesso não autorizado")
                 }
 
                 const result: ApiResponse = await response.json()
 
                 if (result.success && result.data) {
-                    toast.success("Perfil do paciente carregado com sucesso!")
                     setPatient(result.data)
                 } else {
                     throw new Error(result.message || "Erro ao carregar dados do paciente")
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Erro desconhecido")
-                toast.error("Erro ao carregar perfil do paciente")
+                toast.error(err instanceof Error ? err.message : "Erro ao carregar perfil")
             } finally {
                 setLoading(false)
             }
         }
 
-        if (patientId) {
-            fetchPatientData()
-        }
+        fetchPatientData()
     }, [patientId])
 
     const formatDate = (dateString: string) => {
@@ -104,11 +110,12 @@ export default function PatientProfile() {
 
     if (loading) {
         return (
-            <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
+            <div className="flex flex-col min-h-screen bg-gray-50">
                 <Header />
-                <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem 1rem", textAlign: "center" }}>
-                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "200px" }}>
-                        <div style={{ color: "#15803d", fontSize: "1.125rem" }}>Carregando perfil do paciente...</div>
+                <div className="flex flex-1 items-center justify-center text-center">
+                    <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="h-8 w-8 animate-spin text-green-700" />
+                        <p className="text-lg text-gray-600">Carregando perfil do paciente...</p>
                     </div>
                 </div>
             </div>
@@ -117,13 +124,13 @@ export default function PatientProfile() {
 
     if (error || !patient) {
         return (
-            <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
+            <div className="flex flex-col min-h-screen bg-gray-50">
                 <Header />
-                <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem 1rem", textAlign: "center" }}>
-                    <h1 style={{ color: "#dc2626", marginBottom: "1rem" }}>{error || "Paciente não encontrado"}</h1>
-                    <Button onClick={() => router.back()} style={{ marginTop: "1rem" }}>
-                        Voltar
-                    </Button>
+                <div className="flex flex-1 items-center justify-center text-center">
+                    <div className="space-y-4">
+                        <h1 className="text-2xl font-bold text-red-600">{error || "Paciente não encontrado"}</h1>
+                        <Button onClick={() => router.back()}>Voltar</Button>
+                    </div>
                 </div>
             </div>
         )
@@ -134,264 +141,111 @@ export default function PatientProfile() {
         : "/placeholder-avatar.png"
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
+        <div className="min-h-screen bg-gray-50">
             <Header />
 
-            <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem 1rem" }}>
-                {/* Back Button */}
-                <Button
-                    onClick={() => router.back()}
-                    variant="outline"
-                    style={{ marginBottom: "1.5rem", borderColor: "#15803d", color: "#15803d" }}
-                >
+            <main className="container mx-auto max-w-6xl p-4 md:p-8">
+                <Button onClick={() => router.back()} variant="outline" className="mb-6">
                     ← Voltar
                 </Button>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "2rem" }}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Left Column - Patient Info Card */}
-                    <div>
-                        <Card>
-                            <CardContent style={{ padding: "2rem", textAlign: "center" }}>
-                                {/* 🔄 ALTERADO: Substituímos o DIV de iniciais pelo componente de Imagem */}
-                                <div
-                                    style={{
-                                        position: "relative",
-                                        width: "150px",
-                                        height: "150px",
-                                        borderRadius: "50%",
-                                        overflow: "hidden", // Importante para a imagem não vazar da borda arredondada
-                                        margin: "0 auto 1rem",
-                                        backgroundColor: "#e5e7eb", // Cor de fundo caso a imagem demore a carregar
-                                    }}
-                                >
+                    <aside className="md:col-span-1 space-y-6">
+                        <Card className="text-center">
+                            <CardContent className="p-6">
+                                <div className="relative w-36 h-36 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white shadow-lg">
                                     <Image
                                         src={imageUrl}
                                         alt={`Foto de perfil de ${patient.name}`}
                                         fill
-                                        style={{ objectFit: "cover" }}
-                                        priority // Opcional: prioriza o carregamento desta imagem
+                                        unoptimized
+                                        className="object-cover"
+                                        priority
                                     />
                                 </div>
 
-                                <h1 style={{ fontSize: "1.75rem", fontWeight: "bold", marginBottom: "0.5rem", color: "#1f2937" }}>
-                                    {patient.name}
-                                </h1>
+                                <h1 className="text-2xl font-bold text-gray-800">{patient.name}</h1>
+                                <p className="font-semibold text-green-700 mb-4">Paciente</p>
 
-                                <p style={{ color: "#15803d", fontWeight: "600", fontSize: "1.125rem", marginBottom: "1rem" }}>
-                                    Paciente
-                                </p>
-
-                                {/* ... (o resto do seu JSX continua exatamente igual) ... */}
-                                <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginBottom: "1.5rem" }}>
-                                    <Badge
-                                        variant={patient.hidden ? "secondary" : "default"}
-                                        style={{ backgroundColor: patient.hidden ? "#6b7280" : "#15803d" }}
-                                    >
+                                <div className="flex justify-center gap-2 mb-6">
+                                    <Badge variant={patient.hidden ? "secondary" : "default"}>
                                         {patient.hidden ? "Inativo" : "Ativo"}
                                     </Badge>
                                     {patient.first_access && (
-                                        <Badge variant="outline" style={{ borderColor: "#f59e0b", color: "#f59e0b" }}>
+                                        <Badge variant="outline" className="border-yellow-500 text-yellow-600">
                                             Primeiro Acesso
                                         </Badge>
                                     )}
                                 </div>
 
-                                <div
-                                    style={{
-                                        backgroundColor: "#f0fdf4",
-                                        padding: "1rem",
-                                        borderRadius: "0.5rem",
-                                        marginBottom: "1rem",
-                                    }}
-                                >
-                                    <div style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.25rem" }}>Membro desde</div>
-                                    <div style={{ fontSize: "1.125rem", fontWeight: "600", color: "#15803d" }}>
-                                        {formatDate(patient.created_at)}
-                                    </div>
+                                <div className="bg-green-50 p-4 rounded-lg text-left">
+                                    <InfoItem
+                                        icon={<Calendar size={20} />}
+                                        label="Membro desde"
+                                        value={formatDate(patient.created_at)}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
-
-                    </div>
+                    </aside>
 
                     {/* Right Column - Details */}
-                    <div>
-                        {/* Contact Information */}
-                        <Card style={{ marginBottom: "1.5rem" }}>
-                            <CardHeader>
-                                <CardTitle style={{ color: "#15803d", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                    <User size={20} />
-                                    Informações de Contato
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div style={{ display: "grid", gap: "1rem" }}>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "1rem",
-                                            padding: "0.75rem",
-                                            backgroundColor: "#f9fafb",
-                                            borderRadius: "0.5rem",
-                                        }}
-                                    >
-                                        <Mail size={20} style={{ color: "#15803d" }} />
-                                        <div>
-                                            <div style={{ fontSize: "0.875rem", color: "#6b7280" }}>Email</div>
-                                            <div style={{ fontWeight: "600", color: "#1f2937" }}>{patient.email}</div>
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "1rem",
-                                            padding: "0.75rem",
-                                            backgroundColor: "#f9fafb",
-                                            borderRadius: "0.5rem",
-                                        }}
-                                    >
-                                        <Phone size={20} style={{ color: "#15803d" }} />
-                                        <div>
-                                            <div style={{ fontSize: "0.875rem", color: "#6b7280" }}>Telefone</div>
-                                            <div style={{ fontWeight: "600", color: "#1f2937" }}>{formatPhone(patient.phone)}</div>
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "1rem",
-                                            padding: "0.75rem",
-                                            backgroundColor: "#f9fafb",
-                                            borderRadius: "0.5rem",
-                                        }}
-                                    >
-                                        <MapPin size={20} style={{ color: "#15803d" }} />
-                                        <div>
-                                            <div style={{ fontSize: "0.875rem", color: "#6b7280" }}>Endereço</div>
-                                            <div style={{ fontWeight: "600", color: "#1f2937" }}>{patient.address}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Personal Information */}
-                        <Card style={{ marginBottom: "1.5rem" }}>
-                            <CardHeader>
-                                <CardTitle style={{ color: "#15803d", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                    <CreditCard size={20} />
-                                    Informações Pessoais
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                                    <div
-                                        style={{
-                                            padding: "1rem",
-                                            backgroundColor: "#f9fafb",
-                                            borderRadius: "0.5rem",
-                                        }}
-                                    >
-                                        <div style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.25rem" }}>CPF</div>
-                                        <div style={{ fontWeight: "600", color: "#1f2937", fontSize: "1.125rem" }}>
-                                            {formatCPF(patient.cpf)}
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        style={{
-                                            padding: "1rem",
-                                            backgroundColor: "#f9fafb",
-                                            borderRadius: "0.5rem",
-                                        }}
-                                    >
-                                        <div style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.25rem" }}>Função</div>
-                                        <div style={{ fontWeight: "600", color: "#1f2937", fontSize: "1.125rem" }}>
-                                            {patient.role || "Paciente"}
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Account Information */}
+                    <section className="md:col-span-2 space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle style={{ color: "#15803d", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                    <Shield size={20} />
-                                    Informações da Conta
+                                <CardTitle className="text-green-700 flex items-center gap-2">
+                                    <User size={20} /> Informações de Contato
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div style={{ display: "grid", gap: "1rem" }}>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "1rem",
-                                            padding: "0.75rem",
-                                            backgroundColor: "#f9fafb",
-                                            borderRadius: "0.5rem",
-                                        }}
-                                    >
-                                        <Calendar size={20} style={{ color: "#15803d" }} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: "0.875rem", color: "#6b7280" }}>Data de Cadastro</div>
-                                            <div style={{ fontWeight: "600", color: "#1f2937" }}>{formatDate(patient.created_at)}</div>
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "1rem",
-                                            padding: "0.75rem",
-                                            backgroundColor: "#f9fafb",
-                                            borderRadius: "0.5rem",
-                                        }}
-                                    >
-                                        <Clock size={20} style={{ color: "#15803d" }} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: "0.875rem", color: "#6b7280" }}>Última Atualização</div>
-                                            <div style={{ fontWeight: "600", color: "#1f2937" }}>{formatDate(patient.updated_at)}</div>
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "1rem",
-                                            padding: "0.75rem",
-                                            backgroundColor: patient.first_access ? "#fef3c7" : "#f0fdf4",
-                                            borderRadius: "0.5rem",
-                                        }}
-                                    >
-                                        <Shield size={20} style={{ color: patient.first_access ? "#f59e0b" : "#15803d" }} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: "0.875rem", color: "#6b7280" }}>Status da Conta</div>
-                                            <div
-                                                style={{
-                                                    fontWeight: "600",
-                                                    color: patient.first_access ? "#f59e0b" : "#15803d",
-                                                }}
-                                            >
-                                                {patient.first_access ? "Aguardando primeiro acesso" : "Conta ativa"}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                {/* [MUDANÇA] Layout simplificado para uma lista mais limpa */}
+                                <ul className="space-y-4">
+                                    <InfoItem icon={<Mail size={20} />} label="Email" value={patient.email} />
+                                    <InfoItem icon={<Phone size={20} />} label="Telefone" value={formatPhone(patient.phone)} />
+                                    <InfoItem icon={<MapPin size={20} />} label="Endereço" value={patient.address} />
+                                </ul>
                             </CardContent>
                         </Card>
-                    </div>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-green-700 flex items-center gap-2">
+                                    <CreditCard size={20} /> Informações Pessoais
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-4">
+                                    <InfoItem icon={<CreditCard size={20} />} label="CPF" value={formatCPF(patient.cpf)} />
+                                    <InfoItem icon={<User size={20} />} label="Função" value={patient.role || "Paciente"} />
+                                </ul>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-green-700 flex items-center gap-2">
+                                    <Shield size={20} /> Informações da Conta
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-4">
+                                    <InfoItem
+                                        icon={<Clock size={20} />}
+                                        label="Última Atualização"
+                                        value={formatDate(patient.updated_at)}
+                                    />
+                                    <InfoItem
+                                        icon={<Shield size={20} />}
+                                        label="Status da Conta"
+                                        value={patient.first_access ? "Aguardando primeiro acesso" : "Conta ativa"}
+                                    />
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </section>
                 </div>
-            </div>
+            </main>
         </div>
     )
 }
