@@ -34,7 +34,7 @@ interface Nurse {
 }
 
 interface ApiResponse {
-  data: Nurse[] | null // API pode retornar null
+  data: Nurse[] | null
   message: string
   success: boolean
 }
@@ -70,8 +70,6 @@ export default function PatientDashboard() {
         const data: ApiResponse = await response.json()
 
         if (data.success) {
-          // ✨ CORREÇÃO APLICADA AQUI ✨
-          // Garante que nurses sempre será um array, mesmo que data.data seja null
           setNurses(data.data || [])
         } else {
           throw new Error(data.message || "Erro ao carregar dados")
@@ -103,15 +101,19 @@ export default function PatientDashboard() {
       (priceRange === "low" && nurse.price <= 80) ||
       (priceRange === "medium" && nurse.price > 80 && nurse.price <= 100) ||
       (priceRange === "high" && nurse.price > 100)
-      const matchesNeighborhood =
-      !neighborhoodFilter || nurse.location.toLowerCase() === neighborhoodFilter.toLowerCase()
-      
+
+    // [MUDANÇA] Aqui usamos nurse.neighborhood para a lógica de filtro
+    const matchesNeighborhood =
+      !neighborhoodFilter || nurse.neighborhood.toLowerCase() === neighborhoodFilter.toLowerCase()
+
     return matchesSearch && matchesSpecialization && matchesShift && matchesAvailability && matchesPrice && matchesNeighborhood
   })
 
   const uniqueSpecializations = Array.from(new Set(nurses.map((nurse) => nurse.specialization))).filter(Boolean)
   const uniqueShifts = Array.from(new Set(nurses.map((nurse) => nurse.shift))).filter(Boolean)
-  const uniqueNeighborhoods = Array.from(new Set(nurses.map((nurse) => nurse.location))).filter(Boolean)
+
+  // [MUDANÇA] Aqui usamos nurse.neighborhood para popular o dropdown
+  const uniqueNeighborhoods = Array.from(new Set(nurses.map((nurse) => nurse.neighborhood))).filter(Boolean)
 
   const clearFilters = () => {
     setSearchTerm("")
@@ -122,6 +124,7 @@ export default function PatientDashboard() {
     setNeighborhoodFilter("")
   }
 
+  // ... O restante do seu código (JSX para renderização) permanece exatamente o mesmo ...
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc" }}>
@@ -347,7 +350,7 @@ export default function PatientDashboard() {
                   </div>
 
                   <Link href={`/visit/nurses-list/${nurse.id}`}>
-                  <Button
+                    <Button
                       style={{
                         backgroundColor: nurse.available ? "#15803d" : "#6b7280",
                         color: "white",
