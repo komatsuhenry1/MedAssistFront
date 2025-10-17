@@ -82,18 +82,21 @@ export default function VisitsPage() {
                     },
                 })
 
-                console.log("chamou / user/ visits")
-
                 if (!response.ok) {
-                    throw new Error("Erro ao carregar visitas")
+                    // Trata erros de rede ou de servidor (ex: 404, 500)
+                    throw new Error("Erro de comunicação com o servidor.")
                 }
 
                 const result: VisitsResponse = await response.json()
 
-                if (result.success && result.data) {
-                    setVisits(result.data)
+                // [MUDANÇA] Lógica de tratamento da resposta da API ajustada
+                if (result.success) {
+                    // Se a API responder sucesso, aceitamos os dados.
+                    // Se `result.data` for `null` ou `undefined`, transformamos em `[]`
+                    setVisits(result.data || [])
                 } else {
-                    throw new Error(result.message || "Erro ao carregar visitas")
+                    // Se a API explicitamente disser que falhou, aí sim mostramos o erro.
+                    throw new Error(result.message || "Não foi possível carregar as visitas.")
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Erro desconhecido")
@@ -105,6 +108,7 @@ export default function VisitsPage() {
         fetchVisits()
     }, [router])
 
+    // ... O restante do seu componente permanece exatamente o mesmo
     const formatDate = (dateString: string) => {
         const date = new Date(dateString)
         return date.toLocaleDateString("pt-BR", {
@@ -401,7 +405,7 @@ export default function VisitsPage() {
                             <p style={{ color: "#6b7280", marginBottom: "1.5rem" }}>
                                 Você ainda não tem visitas agendadas. Encontre um enfermeiro e agende sua primeira consulta!
                             </p>
-                            <Button onClick={() => router.push("/")} style={{ backgroundColor: "#15803d", color: "white" }}>
+                            <Button onClick={() => router.push("/visit/nurses-list")} style={{ backgroundColor: "#15803d", color: "white" }}>
                                 Buscar Enfermeiros
                             </Button>
                         </CardContent>

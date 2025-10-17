@@ -89,7 +89,6 @@ export default function NurseProfile() {
                 const result: ApiResponse = await response.json()
 
                 if (result.success && result.data) {
-                    toast.success("Enfermeiro carregado com sucesso!")
                     setNurse(result.data)
                     setValue(result.data.price > 0 ? String(result.data.price) : "")
                 } else {
