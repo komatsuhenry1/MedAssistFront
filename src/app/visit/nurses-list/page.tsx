@@ -103,15 +103,15 @@ export default function PatientDashboard() {
       (priceRange === "low" && nurse.price <= 80) ||
       (priceRange === "medium" && nurse.price > 80 && nurse.price <= 100) ||
       (priceRange === "high" && nurse.price > 100)
-    const matchesNeighborhood =
-      !neighborhoodFilter || nurse.neighborhood.toLowerCase() === neighborhoodFilter.toLowerCase()
-
+      const matchesNeighborhood =
+      !neighborhoodFilter || nurse.location.toLowerCase() === neighborhoodFilter.toLowerCase()
+      
     return matchesSearch && matchesSpecialization && matchesShift && matchesAvailability && matchesPrice && matchesNeighborhood
   })
 
   const uniqueSpecializations = Array.from(new Set(nurses.map((nurse) => nurse.specialization))).filter(Boolean)
   const uniqueShifts = Array.from(new Set(nurses.map((nurse) => nurse.shift))).filter(Boolean)
-  const uniqueNeighborhoods = Array.from(new Set(nurses.map((nurse) => nurse.neighborhood))).filter(Boolean)
+  const uniqueNeighborhoods = Array.from(new Set(nurses.map((nurse) => nurse.location))).filter(Boolean)
 
   const clearFilters = () => {
     setSearchTerm("")
