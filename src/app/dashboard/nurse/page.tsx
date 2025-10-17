@@ -21,6 +21,7 @@ interface NurseData {
   specialization: string
   experience: number
   rating: number
+  online: boolean // [MUDANÇA] Campo 'online' adicionado à interface
   price: number
   shift: string
   department: string
@@ -99,6 +100,7 @@ export default function NurseDashboard() {
         if (result.success && result.data) {
           setNurseData(result.data)
           setAvailability(result.data.available)
+          setIsOnline(result.data.online) // [MUDANÇA] O estado 'isOnline' é definido com o valor da API
 
           setAvailabilityForm({
             start_time: result.data.start_time || "08:00",
