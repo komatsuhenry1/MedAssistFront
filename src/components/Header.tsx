@@ -150,13 +150,11 @@ export function Header() {
     <>
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
         <div className="container flex h-16 items-center justify-between">
-          {/* Bloco 1: Esquerda (Logo) - Sem alterações */}
           <Link href={logoUrl} className="flex items-center space-x-2">
             <Image src="/logo.png" alt="Vita Logo" width={40} height={40} className="object-cover pl-2" />
             <span className="text-lg font-semibold hidden sm:block text-[#15803d]">Vita</span>
           </Link>
 
-          {/* [MUDANÇA] Bloco 2: Centro (Navegação) - Agora é um item separado */}
           <nav className="hidden md:flex items-center space-x-8">
             {currentNavLinks.map((link) => (
               <Link key={link.href} href={link.href} className="text-sm font-medium hover:text-primary transition-colors">
@@ -165,9 +163,7 @@ export function Header() {
             ))}
           </nav>
 
-          {/* [MUDANÇA] Bloco 3: Direita (Botões de Usuário e Menu Mobile) */}
           <div className="flex items-center">
-            {/* Itens que aparecem apenas no desktop */}
             <div className="hidden md:flex items-center space-x-3">
               {isAuthenticated ? (
                 <>
@@ -271,7 +267,6 @@ export function Header() {
               )}
             </div>
 
-            {/* Item que aparece apenas no mobile */}
             <div className="md:hidden">
               <Sheet>
                 <SheetTrigger asChild>
@@ -283,14 +278,15 @@ export function Header() {
                 <SheetContent side="right" className="w-64">
                   <div className="flex flex-col gap-6 mt-8">
                     {isAuthenticated && userData && (
-                      <div className="flex items-center gap-3 pb-4 border-b">
+                      // [MUDANÇA] Adicionado 'flex-col' para empilhar e 'items-center' para centralizar.
+                      <div className="flex flex-col items-center gap-2 pb-4 border-b text-center">
                         <Avatar className="h-10 w-10">
                           {avatarUrl && <AvatarImage src={avatarUrl} alt={userData.name} />}
                           <AvatarFallback className="bg-[#15803d] text-white">
                             {getInitials(userData.name)}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col">
+                        <div>
                           <p className="text-sm font-medium">{userData.name}</p>
                           <p className="text-xs text-muted-foreground">{userData.email}</p>
                         </div>
